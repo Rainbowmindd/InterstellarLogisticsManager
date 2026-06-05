@@ -3,27 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interstellar Logistics Manager</title>
-    <link rel="stylesheet" href="static/style.css">
+    <title>Interstellar Logistics Manager - Pełne Sterowanie</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <h1>Interstellar Logistics Manager</h1>
 
+        <!-- SEKCJA: FLOTA STATKÓW -->
         <div class="section">
             <h2>Flota Statków</h2>
             <ul id="ship-list">
-                <!-- Statki zostaną załadowane tutaj przez JavaScript -->
                 <li>Ładowanie statków...</li>
             </ul>
         </div>
 
+        <!-- SEKCJA: SZCZEGÓŁY STATKU -->
+        <div class="section">
+            <h2>Szczegóły Statku</h2>
+            <form id="get-ship-form">
+                <div class="form-group">
+                    <label for="getShipSelect">Wybierz statek:</label>
+                    <select id="getShipSelect"></select>
+                </div>
+                <button type="submit">Pokaż szczegóły</button>
+            </form>
+            <div id="ship-details" class="crew-details">
+                <p>Wybierz statek, aby zobaczyć jego szczegóły.</p>
+            </div>
+        </div>
+
+        <!-- SEKCJA: STWÓRZ NOWY STATEK -->
+        <div class="section">
+            <h2>Stwórz Nowy Statek</h2>
+            <form id="create-ship-form">
+                <div class="form-group">
+                    <label for="newShipName">Nazwa:</label>
+                    <input type="text" id="newShipName" required>
+                </div>
+                <div class="form-group">
+                    <label for="newShipRegistry">Rejestr:</label>
+                    <input type="text" id="newShipRegistry" required>
+                </div>
+                <div class="form-group">
+                    <label for="newShipClass">Klasa (domyślnie Heavy Freighter):</label>
+                    <input type="text" id="newShipClass">
+                </div>
+                <div class="form-group">
+                    <label for="newShipRouteId">ID Trasy (opcjonalnie):</label>
+                    <select id="newShipRouteId">
+                        <option value="">Brak trasy</option>
+                        <!-- Opcje tras zostaną załadowane dynamicznie -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newShipDepartureDate">Data odlotu (opcjonalnie):</label>
+                    <input type="date" id="newShipDepartureDate">
+                </div>
+                <div class="form-group">
+                    <label for="newShipEta">ETA (opcjonalnie):</label>
+                    <input type="date" id="newShipEta">
+                </div>
+                <button type="submit">Stwórz Statek</button>
+            </form>
+            <p id="create-ship-message" class="result-message"></p>
+        </div>
+
+        <!-- SEKCJA: AKTUALIZUJ STATUS STATKU -->
         <div class="section">
             <h2>Aktualizuj Status Statku</h2>
             <form id="update-ship-status-form">
                 <div class="form-group">
-                    <label for="shipSelect">Wybierz statek:</label>
-                    <select id="shipSelect"></select>
+                    <label for="statusShipSelect">Wybierz statek:</label>
+                    <select id="statusShipSelect"></select>
                 </div>
                 <div class="form-group">
                     <label for="newStatus">Nowy status:</label>
@@ -36,106 +88,539 @@
                 </div>
                 <button type="submit">Zaktualizuj Status</button>
             </form>
+            <p id="update-status-message" class="result-message"></p>
         </div>
 
+        <!-- SEKCJA: AKTUALIZUJ SYSTEMY STATKU -->
+        <div class="section">
+            <h2>Aktualizuj Systemy Statku</h2>
+            <form id="update-ship-systems-form">
+                <div class="form-group">
+                    <label for="systemsShipSelect">Wybierz statek:</label>
+                    <select id="systemsShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="reactorOutput">Reaktor (%):</label>
+                    <input type="number" id="reactorOutput" min="0" max="100" placeholder="0-100">
+                </div>
+                <div class="form-group">
+                    <label for="lifeSupportStatus">Wsparcie życia:</label>
+                    <input type="text" id="lifeSupportStatus" placeholder="np. active, standby">
+                </div>
+                <div class="form-group">
+                    <label for="hullIntegrity">Integralność kadłuba (%):</label>
+                    <input type="number" id="hullIntegrity" min="0" max="100" placeholder="0-100">
+                </div>
+                <div class="form-group">
+                    <label for="fuelRemaining">Pozostałe paliwo (%):</label>
+                    <input type="number" id="fuelRemaining" min="0" max="100" placeholder="0-100">
+                </div>
+                <button type="submit">Zaktualizuj Systemy</button>
+            </form>
+            <p id="update-systems-message" class="result-message"></p>
+        </div>
+
+        <!-- SEKCJA: ZARZĄDZANIE ŁADUNKIEM -->
+        <div class="section">
+            <h2>Zarządzanie Ładunkiem</h2>
+            <form id="add-cargo-form">
+                <h3>Dodaj Ładunek</h3>
+                <div class="form-group">
+                    <label for="cargoShipSelect">Wybierz statek:</label>
+                    <select id="cargoShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="cargoType">Typ:</label>
+                    <input type="text" id="cargoType" required placeholder="np. food, equipment">
+                </div>
+                <div class="form-group">
+                    <label for="cargoDescription">Opis:</label>
+                    <textarea id="cargoDescription" rows="1" placeholder="Opis ładunku"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cargoQuantity">Ilość (kg):</label>
+                    <input type="number" id="cargoQuantity" required min="1">
+                </div>
+                <div class="form-group">
+                    <label for="cargoCapacity">Max pojemność (kg):</label>
+                    <input type="number" id="cargoCapacity" required min="1">
+                </div>
+                <div class="form-group">
+                    <label for="cargoHazardous">Niebezpieczny:</label>
+                    <input type="checkbox" id="cargoHazardous">
+                </div>
+                <div class="form-group">
+                    <label for="cargoDestination">Cel:</label>
+                    <input type="text" id="cargoDestination" placeholder="np. Mars Colony">
+                </div>
+                <button type="submit">Dodaj Ładunek</button>
+            </form>
+            <p id="add-cargo-message" class="result-message"></p>
+
+            <form id="remove-cargo-form">
+                <h3>Usuń Ładunek</h3>
+                <div class="form-group">
+                    <label for="removeCargoShipSelect">Wybierz statek:</label>
+                    <select id="removeCargoShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="removeCargoItemId">ID Ładunku (z listingu statku):</label>
+                    <input type="text" id="removeCargoItemId" placeholder="np. CRG-1701234567" required>
+                </div>
+                <button type="submit">Usuń Ładunek</button>
+            </form>
+            <p id="remove-cargo-message" class="result-message"></p>
+        </div>
+
+        <!-- SEKCJA: ZARZĄDZANIE ZAŁOGĄ NA STATKU -->
+        <div class="section">
+            <h2>Zarządzanie Załogą na Statku</h2>
+            <form id="assign-crew-form">
+                <h3>Przydziel Załoganta</h3>
+                <div class="form-group">
+                    <label for="assignCrewShipSelect">Wybierz statek:</label>
+                    <select id="assignCrewShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="assignCrewMemberSelect">Wybierz załoganta:</label>
+                    <select id="assignCrewMemberSelect"></select>
+                </div>
+                <button type="submit">Przydziel Załoganta</button>
+            </form>
+            <p id="assign-crew-message" class="result-message"></p>
+
+            <form id="remove-crew-form">
+                <h3>Odwołaj Załoganta</h3>
+                <div class="form-group">
+                    <label for="removeCrewShipSelect">Wybierz statek:</label>
+                    <select id="removeCrewShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="removeCrewMemberId">ID Załoganta (z listingu statku):</label>
+                    <input type="text" id="removeCrewMemberId" placeholder="np. 60d0fe4f53531b79e2c694a1" required>
+                </div>
+                <button type="submit">Odwołaj Załoganta</button>
+            </form>
+            <p id="remove-crew-message" class="result-message"></p>
+        </div>
+
+        <!-- SEKCJA: ZARZĄDZANIE ZAŁOGĄ (KOLEKCJA CREW) -->
+        <div class="section">
+            <h2>Zarządzanie Załogą (Kolekcja Crew)</h2>
+            <h3>Lista Załogi</h3>
+            <form id="list-crew-form">
+                <div class="form-group">
+                    <label for="crewRoleFilter">Filtruj po roli (opcjonalnie):</label>
+                    <input type="text" id="crewRoleFilter" placeholder="np. Pilot, Medical Officer">
+                </div>
+                <button type="submit">Pokaż Załogę</button>
+            </form>
+            <div id="crew-list-results" class="crew-details">
+                <p>Użyj formularza powyżej, aby wyświetlić załogę.</p>
+            </div>
+
+            <h3>Szczegóły Załoganta</h3>
+            <form id="get-crew-member-form">
+                <div class="form-group">
+                    <label for="getCrewMemberSelect">Wybierz załoganta:</label>
+                    <select id="getCrewMemberSelect"></select>
+                </div>
+                <button type="submit">Pokaż szczegóły</button>
+            </form>
+            <div id="crew-member-details" class="crew-details">
+                <p>Wybierz załoganta, aby zobaczyć jego szczegóły i przydziały.</p>
+            </div>
+
+            <h3>Stwórz Nowego Załoganta</h3>
+            <form id="create-crew-member-form">
+                <div class="form-group">
+                    <label for="newCrewName">Imię i nazwisko:</label>
+                    <input type="text" id="newCrewName" required>
+                </div>
+                <div class="form-group">
+                    <label for="newCrewRole">Rola:</label>
+                    <input type="text" id="newCrewRole" required placeholder="np. Pilot">
+                </div>
+                <div class="form-group">
+                    <label for="newCrewRank">Ranga (domyślnie Ensign):</label>
+                    <input type="text" id="newCrewRank">
+                </div>
+                <div class="form-group">
+                    <label for="newCrewCertifications">Certyfikaty (oddziel przecinkami):</label>
+                    <input type="text" id="newCrewCertifications" placeholder="np. Fighter Pilot, Engineer">
+                </div>
+                <div class="form-group">
+                    <label for="newCrewBloodType">Grupa krwi:</label>
+                    <input type="text" id="newCrewBloodType" placeholder="np. O+">
+                </div>
+                <div class="form-group">
+                    <label for="newCrewExperienceYears">Lata doświadczenia:</label>
+                    <input type="number" id="newCrewExperienceYears" min="0" value="0">
+                </div>
+                <button type="submit">Stwórz Załoganta</button>
+            </form>
+            <p id="create-crew-message" class="result-message"></p>
+
+            <h3>Aktualizuj Status Medyczny Załoganta</h3>
+            <form id="update-medical-form">
+                <div class="form-group">
+                    <label for="medicalCrewSelect">Wybierz załoganta:</label>
+                    <select id="medicalCrewSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="medicalFitForDuty">Zdolny do służby:</label>
+                    <input type="checkbox" id="medicalFitForDuty" checked>
+                </div>
+                <div class="form-group">
+                    <label for="medicalLastCheckup">Ostatnie badanie (opcjonalnie):</label>
+                    <input type="date" id="medicalLastCheckup">
+                </div>
+                <button type="submit">Aktualizuj Medycznie</button>
+            </form>
+            <p id="update-medical-message" class="result-message"></p>
+        </div>
+
+        <!-- SEKCJA: TRASY -->
+        <div class="section">
+            <h2>Trasy</h2>
+            <h3>Lista Tras</h3>
+            <button id="list-routes-button">Pokaż Trasy</button>
+            <div id="route-list-results" class="route-details">
+                <p>Kliknij przycisk, aby wyświetlić listę tras.</p>
+            </div>
+        </div>
+
+        <!-- SEKCJA: TELEMETRIA -->
+        <div class="section">
+            <h2>Telemetria</h2>
+            <h3>Dodaj Nowy Odczyt Telemetrii</h3>
+            <form id="add-telemetry-form">
+                <div class="form-group">
+                    <label for="telemetryShipSelect">Wybierz statek:</label>
+                    <select id="telemetryShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="temperatureCelsius">Temperatura (°C):</label>
+                    <input type="number" id="temperatureCelsius" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="radiationMsv">Radiacja (mSv):</label>
+                    <input type="number" id="radiationMsv" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="fuelConsumptionKgH">Zużycie paliwa (kg/h):</label>
+                    <input type="number" id="fuelConsumptionKgH" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="speedKmS">Prędkość (km/s):</label>
+                    <input type="number" id="speedKmS" step="0.01" required>
+                </div>
+                <button type="submit">Dodaj Odczyt</button>
+            </form>
+            <p id="add-telemetry-message" class="result-message"></p>
+
+            <h3>Pobierz Odczyty Telemetrii</h3>
+            <form id="get-telemetry-form">
+                <div class="form-group">
+                    <label for="getTelemetryShipSelect">Wybierz statek:</label>
+                    <select id="getTelemetryShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="telemetryLimit">Limit (ostatnie N odczytów):</label>
+                    <input type="number" id="telemetryLimit" value="24" min="1">
+                </div>
+                <button type="submit">Pobierz Odczyty</button>
+            </form>
+            <div id="telemetry-readings" class="telemetry-results">
+                <p>Pobierz odczyty telemetrii dla wybranego statku.</p>
+            </div>
+        </div>
+
+        <!-- SEKCJA: ANALITYKA -->
+        <div class="section">
+            <h2>Analityka</h2>
+            <h3>Podsumowanie Floty</h3>
+            <button id="fleet-summary-button">Pokaż Podsumowanie</button>
+            <div id="fleet-summary-results" class="analytics-results">
+                <p>Kliknij, aby zobaczyć podsumowanie floty.</p>
+            </div>
+
+            <h3>Misje Krytyczne</h3>
+            <button id="critical-missions-button">Pokaż Misje Krytyczne</button>
+            <div id="critical-missions-results" class="analytics-results">
+                <p>Kliknij, aby zobaczyć misje krytyczne (statki w transicie z lekarzem i niskimi zapasami żywności).</p>
+            </div>
+
+            <h3>Rozkład Ładunku</h3>
+            <button id="cargo-breakdown-button">Pokaż Rozkład Ładunku</button>
+            <div id="cargo-breakdown-results" class="analytics-results">
+                <p>Kliknij, aby zobaczyć rozkład ładunku wg typu.</p>
+            </div>
+
+            <h3>Średnie Parametry Telemetrii za Okres</h3>
+            <form id="telemetry-avg-form">
+                <div class="form-group">
+                    <label for="avgTelemetryShipSelect">Wybierz statek:</label>
+                    <select id="avgTelemetryShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="avgTelemetryHours">Liczba godzin wstecz:</label>
+                    <input type="number" id="avgTelemetryHours" value="24" min="1">
+                </div>
+                <button type="submit">Pobierz Średnie</button>
+            </form>
+            <div id="telemetry-avg-results" class="analytics-results">
+                <p>Pobierz średnie parametry telemetrii dla wybranego statku.</p>
+            </div>
+        </div>
+
+        <!-- SEKCJA: PRZENIEŚ ZAŁOGANTA (TRANSAKCJA) -->
         <div class="section">
             <h2>Przenieś Załoganta (Transakcja)</h2>
             <p>Demonstracja transakcji wielodokumentowej: załogant zostanie usunięty z jednego statku i dodany do drugiego atomowo.</p>
             <form id="transfer-crew-form">
                 <div class="form-group">
-                    <label for="crewIdInput">ID Załoganta:</label>
-                    <input type="text" id="crewIdInput" placeholder="np. 60d0fe4f53531b79e2c694a1">
+                    <label for="transferCrewIdInput">ID Załoganta:</label>
+                    <input type="text" id="transferCrewIdInput" placeholder="np. 60d0fe4f53531b79e2c694a1" required>
                 </div>
                 <div class="form-group">
-                    <label for="sourceShipSelect">Z statku:</label>
-                    <select id="sourceShipSelect"></select>
+                    <label for="transferSourceShipSelect">Z statku:</label>
+                    <select id="transferSourceShipSelect"></select>
                 </div>
                 <div class="form-group">
-                    <label for="destShipSelect">Do statku:</label>
-                    <select id="destShipSelect"></select>
+                    <label for="transferDestShipSelect">Do statku:</label>
+                    <select id="transferDestShipSelect"></select>
                 </div>
                 <button type="submit">Przenieś Załoganta</button>
             </form>
-            <p id="transfer-message"></p>
+            <p id="transfer-message" class="result-message"></p>
         </div>
 
+        <!-- SEKCJA: AKTUALIZACJE W CZASIE RZECZYWISTYM (CHANGE STREAM) -->
         <div class="section">
             <h2>Aktualizacje w Czasie Rzeczywistym (Change Stream)</h2>
-            <p>Ta sekcja na bieżąco wyświetla zmiany w kolekcji statków.</p>
+            <p>Ta sekcja na bieżąco wyświetla zmiany w kolekcji statków. Wymaga MongoDB jako replikasetu.</p>
             <div id="realtime-updates" class="realtime-updates">
                 <p>Łączenie z Change Stream. Upewnij się, że MongoDB działa jako replikaset...</p>
             </div>
         </div>
+
     </div>
 
     <script>
-        const shipList = document.getElementById('ship-list');
-        const shipSelect = document.getElementById('shipSelect');
-        const updateShipStatusForm = document.getElementById('update-ship-status-form');
-        const newStatusSelect = document.getElementById('newStatus');
+        // --- POMOCNIKI ---
+        function showMessage(element, message, type = 'info') {
+            element.textContent = message;
+            element.className = `result-message ${type}`;
+            setTimeout(() => {
+                element.textContent = '';
+                element.className = 'result-message';
+            }, 5000); // Wiadomość znika po 5 sekundach
+        }
 
-        const transferCrewForm = document.getElementById('transfer-crew-form');
-        const crewIdInput = document.getElementById('crewIdInput');
-        const sourceShipSelect = document.getElementById('sourceShipSelect');
-        const destShipSelect = document.getElementById('destShipSelect');
-        const transferMessage = document.getElementById('transfer-message');
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString();
+            } catch (e) {
+                return dateString; // Zwróć oryginalny string, jeśli parsowanie się nie powiedzie
+            }
+        }
 
-        const realtimeUpdatesDiv = document.getElementById('realtime-updates');
+        // --- GLOBALNE DANE DLA LIST ROZWIJANYCH ---
+        let allShips = [];
+        let allCrew = [];
+        let allRoutes = [];
 
-        let allShips = []; // Do przechowywania wszystkich statków dla list rozwijanych
+        // --- FUNKCJE POBIERAJĄCE DANE DLA LIST ROZWIJANYCH I WYŚWIETLANIA ---
 
-        // Funkcja do pobierania i wyświetlania statków
+        // Pobierz i wyświetl statki, wypełnij wszystkie selekty statków
         async function fetchShips() {
             try {
                 const response = await fetch('/api/ships');
                 const ships = await response.json();
-                allShips = ships; // Przechowaj statki dla list rozwijanych
+                allShips = ships;
 
-                // Wyczyść i wypełnij listy
-                shipList.innerHTML = '';
-                shipSelect.innerHTML = '';
-                sourceShipSelect.innerHTML = '';
-                destShipSelect.innerHTML = '';
-
+                // Wyczyść i wypełnij listę statków (ul)
+                const shipListUl = document.getElementById('ship-list');
+                shipListUl.innerHTML = '';
                 if (ships.length === 0) {
-                    shipList.innerHTML = '<li>Brak statków w bazie danych.</li>';
-                    return;
+                    shipListUl.innerHTML = '<li>Brak statków w bazie danych.</li>';
                 }
+
+                // Wyczyść i wypełnij wszystkie selekty statków
+                const shipSelects = document.querySelectorAll('select[id$="ShipSelect"]'); // Selecty kończące się na "ShipSelect"
+                shipSelects.forEach(select => {
+                    select.innerHTML = '<option value="">-- Wybierz Statek --</option>'; // Opcja domyślna
+                });
 
                 ships.forEach(ship => {
                     const listItem = document.createElement('li');
                     listItem.innerHTML = `
                         <strong>${ship.name}</strong> (${ship.registry}) <br>
-                        <span>Status: ${ship.status} | Trasa: ${ship.route?.name || 'Brak'} (Hazard: ${ship.route?.hazard_level || 'N/A'}) | Załoga: ${ship.crew_count} | Ładunek: ${ship.cargo_count}</span>
+                        <span>ID: ${ship._id}</span><br>
+                        <span>Status: ${ship.status} | Trasa: ${ship.route?.name || 'Brak'} (Hazard: ${ship.route?.hazard_level || 'N/A'})</span><br>
+                        <span>Załoga: ${ship.crew_count} | Ładunek: ${ship.cargo_count}</span><br>
+                        <span>Integralność Kadłuba: ${ship.systems?.hull_integrity_percent}% | Paliwo: ${ship.systems?.fuel_remaining_percent}%</span>
                     `;
-                    shipList.appendChild(listItem);
+                    shipListUl.appendChild(listItem);
 
-                    // Wypełnij listy rozwijane do aktualizacji statusu
-                    const option = document.createElement('option');
-                    option.value = ship._id;
-                    option.textContent = `${ship.name} (${ship.registry})`;
-                    shipSelect.appendChild(option);
-
-                    // Wypełnij listy rozwijane do przenoszenia załogi
-                    const sourceOption = option.cloneNode(true);
-                    sourceShipSelect.appendChild(sourceOption);
-                    const destOption = option.cloneNode(true);
-                    destShipSelect.appendChild(destOption);
+                    shipSelects.forEach(select => {
+                        const option = document.createElement('option');
+                        option.value = ship._id;
+                        option.textContent = `${ship.name} (${ship.registry}) (ID: ${ship._id})`;
+                        select.appendChild(option);
+                    });
                 });
             } catch (error) {
                 console.error('Błąd podczas pobierania statków:', error);
-                shipList.innerHTML = '<li>Błąd podczas ładowania statków.</li>';
+                document.getElementById('ship-list').innerHTML = '<li>Błąd podczas ładowania statków.</li>';
             }
         }
 
-        // Obsługa formularza aktualizacji statusu statku
-        updateShipStatusForm.addEventListener('submit', async (e) => {
+        // Pobierz i wypełnij listy załogi (dla selektów)
+        async function fetchCrew() {
+            try {
+                const response = await fetch('/api/crew');
+                const crew = await response.json();
+                allCrew = crew;
+
+                const crewSelects = document.querySelectorAll('select[id$="CrewSelect"]'); // Selecty kończące się na "CrewSelect"
+                crewSelects.forEach(select => {
+                    select.innerHTML = '<option value="">-- Wybierz Załoganta --</option>'; // Opcja domyślna
+                });
+
+                crew.forEach(member => {
+                    crewSelects.forEach(select => {
+                        const option = document.createElement('option');
+                        option.value = member._id;
+                        option.textContent = `${member.name} (${member.role}) (ID: ${member._id})`;
+                        select.appendChild(option);
+                    });
+                });
+            } catch (error) {
+                console.error('Błąd podczas pobierania załogi:', error);
+            }
+        }
+
+        // Pobierz i wypełnij listy tras (dla selektów)
+        async function fetchRoutes() {
+            try {
+                const response = await fetch('/api/routes');
+                const routes = await response.json();
+                allRoutes = routes;
+
+                const routeSelects = document.querySelectorAll('select[id$="RouteId"]'); // Selecty kończące się na "RouteId"
+                routeSelects.forEach(select => {
+                     select.innerHTML = '<option value="">-- Brak trasy --</option>'; // Opcja "Brak trasy"
+                     routes.forEach(route => {
+                        const option = document.createElement('option');
+                        option.value = route._id;
+                        option.textContent = `${route.name} (Hazard: ${route.hazard_level})`;
+                        select.appendChild(option);
+                    });
+                });
+            } catch (error) {
+                console.error('Błąd podczas pobierania tras:', error);
+            }
+        }
+
+        // --- OBSŁUGA FORMULARZY I PRZYCISKÓW ---
+
+        // SHIPS: Szczegóły statku
+        document.getElementById('get-ship-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const shipId = shipSelect.value;
-            const newStatus = newStatusSelect.value;
+            const shipId = document.getElementById('getShipSelect').value;
+            const shipDetailsDiv = document.getElementById('ship-details');
+            if (!shipId) {
+                showMessage(shipDetailsDiv, '<p class="result-message warning">Wybierz statek.</p>', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/ships/${shipId}`);
+                const ship = await response.json();
+                if (response.ok) {
+                    shipDetailsDiv.innerHTML = `
+                        <h3>${ship.name} (${ship.registry})</h3>
+                        <p><strong>ID:</strong> ${ship._id}</p>
+                        <p><strong>Klasa:</strong> ${ship.class}</p>
+                        <p><strong>Status:</strong> ${ship.status}</p>
+                        <p><strong>Trasa:</strong> ${ship.route?.name || 'Brak'} (Poziom zagrożenia: ${ship.route?.hazard_level || 'N/A'})</p>
+                        <p><strong>Data odlotu:</strong> ${formatDate(ship.departure_date)}</p>
+                        <p><strong>ETA:</strong> ${formatDate(ship.eta)}</p>
+                        <h4>Systemy:</h4>
+                        <ul>
+                            <li>Reaktor: ${ship.systems?.reactor_output_percent}%</li>
+                            <li>Wsparcie życia: ${ship.systems?.life_support_status}</li>
+                            <li>Integralność kadłuba: ${ship.systems?.hull_integrity_percent}%</li>
+                            <li>Paliwo: ${ship.systems?.fuel_remaining_percent}%</li>
+                        </ul>
+                        <h4>Załoga:</h4>
+                        <ul>
+                            ${ship.crew && ship.crew.length > 0 ? ship.crew.map(c => `<li>${c.name} (${c.role}, ID: ${c._id})</li>`).join('') : '<li>Brak załogi</li>'}
+                        </ul>
+                        <h4>Ładunek:</h4>
+                        <ul>
+                            ${ship.cargo && ship.cargo.length > 0 ? ship.cargo.map(c => `<li>${c.type}: ${c.description} - ${c.quantity_kg}kg (max: ${c.max_capacity_kg}kg), Cel: ${c.destination} ${c.hazardous ? '(NIEBEZPIECZNY)' : ''} (ID: ${c.item_id})</li>`).join('') : '<li>Brak ładunku</li>'}
+                        </ul>
+                    `;
+                } else {
+                    showMessage(shipDetailsDiv, `Błąd: ${ship.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania szczegółów statku:', error);
+                showMessage(shipDetailsDiv, 'Wystąpił błąd podczas pobierania szczegółów.', 'error');
+            }
+        });
+
+        // SHIPS: Stwórz nowy statek
+        document.getElementById('create-ship-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const newShipRouteId = form.elements['newShipRouteId'].value;
+            const departureDate = form.elements['newShipDepartureDate'].value;
+            const eta = form.elements['newShipEta'].value;
+
+            const data = {
+                name: form.elements['newShipName'].value,
+                registry: form.elements['newShipRegistry'].value,
+                class: form.elements['newShipClass'].value || "Heavy Freighter",
+                route_id: newShipRouteId || null,
+                departure_date: departureDate ? new Date(departureDate).toISOString() : null,
+                eta: eta ? new Date(eta).toISOString() : null,
+            };
+
+            const createShipMessage = document.getElementById('create-ship-message');
+            try {
+                const response = await fetch('/api/ships', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(createShipMessage, `Statek "${result.name}" (${result._id}) stworzony pomyślnie!`, 'success');
+                    form.reset();
+                    fetchShips(); // Odśwież listę
+                } else {
+                    showMessage(createShipMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas tworzenia statku:', error);
+                showMessage(createShipMessage, 'Wystąpił błąd podczas tworzenia statku.', 'error');
+            }
+        });
+
+        // SHIPS: Aktualizacja statusu statku
+        document.getElementById('update-ship-status-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('statusShipSelect').value;
+            const newStatus = document.getElementById('newStatus').value;
+            const updateStatusMessage = document.getElementById('update-status-message');
 
             if (!shipId) {
-                alert("Wybierz statek do aktualizacji.");
+                showMessage(updateStatusMessage, "Wybierz statek do aktualizacji.", 'warning');
                 return;
             }
 
@@ -147,45 +632,691 @@
                 });
                 const result = await response.json();
                 if (response.ok && result.success) {
-                    alert(`Status statku ${shipSelect.options[shipSelect.selectedIndex].text} zaktualizowany na: ${newStatus}`);
-                    fetchShips(); // Odśwież listę statków
+                    showMessage(updateStatusMessage, `Status statku zaktualizowany na: ${newStatus}`, 'success');
+                    fetchShips();
                 } else {
-                    alert(`Błąd: ${result.error || response.statusText}`);
+                    showMessage(updateStatusMessage, `Błąd: ${result.error || response.statusText}`, 'error');
                 }
             } catch (error) {
                 console.error('Błąd podczas aktualizacji statusu:', error);
-                alert('Wystąpił błąd podczas aktualizacji statusu.');
+                showMessage(updateStatusMessage, 'Wystąpił błąd podczas aktualizacji statusu.', 'error');
             }
         });
 
-        // Obsługa formularza przenoszenia załoganta (transakcja)
-        transferCrewForm.addEventListener('submit', async (e) => {
+        // SHIPS: Aktualizacja systemów statku
+        document.getElementById('update-ship-systems-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const crew_id = crewIdInput.value.trim();
-            const source_ship_id = sourceShipSelect.value;
-            const destination_ship_id = destShipSelect.value;
+            const shipId = document.getElementById('systemsShipSelect').value;
+            const updateSystemsMessage = document.getElementById('update-systems-message');
+
+            if (!shipId) {
+                showMessage(updateSystemsMessage, "Wybierz statek do aktualizacji systemów.", 'warning');
+                return;
+            }
+
+            const data = {};
+            const reactorOutput = document.getElementById('reactorOutput').value;
+            const lifeSupportStatus = document.getElementById('lifeSupportStatus').value;
+            const hullIntegrity = document.getElementById('hullIntegrity').value;
+            const fuelRemaining = document.getElementById('fuelRemaining').value;
+
+            if (reactorOutput) data.reactor_output_percent = parseInt(reactorOutput);
+            if (lifeSupportStatus) data.life_support_status = lifeSupportStatus;
+            if (hullIntegrity) data.hull_integrity_percent = parseInt(hullIntegrity);
+            if (fuelRemaining) data.fuel_remaining_percent = parseInt(fuelRemaining);
+
+            if (Object.keys(data).length === 0) {
+                showMessage(updateSystemsMessage, "Wypełnij przynajmniej jedno pole systemu do aktualizacji.", 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ships/${shipId}/systems`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(updateSystemsMessage, 'Systemy statku zaktualizowane pomyślnie!', 'success');
+                    e.target.reset();
+                    fetchShips(); // Odśwież listę statków, bo dane systems są wyświetlane
+                } else {
+                    showMessage(updateSystemsMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas aktualizacji systemów:', error);
+                showMessage(updateSystemsMessage, 'Wystąpił błąd podczas aktualizacji systemów.', 'error');
+            }
+        });
+
+        // SHIPS: Dodaj ładunek
+        document.getElementById('add-cargo-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('cargoShipSelect').value;
+            const addCargoMessage = document.getElementById('add-cargo-message');
+
+            if (!shipId) {
+                showMessage(addCargoMessage, "Wybierz statek, do którego chcesz dodać ładunek.", 'warning');
+                return;
+            }
+
+            const data = {
+                type: document.getElementById('cargoType').value,
+                description: document.getElementById('cargoDescription').value,
+                quantity_kg: parseInt(document.getElementById('cargoQuantity').value),
+                max_capacity_kg: parseInt(document.getElementById('cargoCapacity').value),
+                hazardous: document.getElementById('cargoHazardous').checked,
+                destination: document.getElementById('cargoDestination').value,
+            };
+
+            try {
+                const response = await fetch(`/api/ships/${shipId}/cargo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(addCargoMessage, `Ładunek "${result.type}" dodany do statku pomyślnie! (ID: ${result.item_id})`, 'success');
+                    e.target.reset();
+                    fetchShips(); // Odśwież listę, aby zaktualizować cargo_count
+                } else {
+                    showMessage(addCargoMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas dodawania ładunku:', error);
+                showMessage(addCargoMessage, 'Wystąpił błąd podczas dodawania ładunku.', 'error');
+            }
+        });
+
+        // SHIPS: Usuń ładunek
+        document.getElementById('remove-cargo-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('removeCargoShipSelect').value;
+            const itemId = document.getElementById('removeCargoItemId').value;
+            const removeCargoMessage = document.getElementById('remove-cargo-message');
+
+            if (!shipId || !itemId) {
+                showMessage(removeCargoMessage, "Wybierz statek i podaj ID ładunku.", 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ships/${shipId}/cargo/${itemId}`, {
+                    method: 'DELETE',
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(removeCargoMessage, `Ładunek ${itemId} usunięty ze statku pomyślnie!`, 'success');
+                    e.target.reset();
+                    fetchShips(); // Odśwież listę
+                } else {
+                    showMessage(removeCargoMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas usuwania ładunku:', error);
+                showMessage(removeCargoMessage, 'Wystąpił błąd podczas usuwania ładunku.', 'error');
+            }
+        });
+
+        // SHIPS: Przydziel załoganta
+        document.getElementById('assign-crew-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('assignCrewShipSelect').value;
+            const crewId = document.getElementById('assignCrewMemberSelect').value;
+            const assignCrewMessage = document.getElementById('assign-crew-message');
+
+            if (!shipId || !crewId) {
+                showMessage(assignCrewMessage, "Wybierz statek i załoganta.", 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ships/${shipId}/crew`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ crew_id: crewId })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(assignCrewMessage, `Załogant ${crewId} przydzielony do statku pomyślnie!`, 'success');
+                    e.target.reset();
+                    fetchShips(); // Odśwież listę, aby zaktualizować crew_count
+                } else {
+                    showMessage(assignCrewMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas przydzielania załoganta:', error);
+                showMessage(assignCrewMessage, 'Wystąpił błąd podczas przydzielania załoganta.', 'error');
+            }
+        });
+
+        // SHIPS: Odwołaj załoganta
+        document.getElementById('remove-crew-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('removeCrewShipSelect').value;
+            const crewId = document.getElementById('removeCrewMemberId').value;
+            const removeCrewMessage = document.getElementById('remove-crew-message');
+
+            if (!shipId || !crewId) {
+                showMessage(removeCrewMessage, "Wybierz statek i podaj ID załoganta.", 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ships/${shipId}/crew/${crewId}`, {
+                    method: 'DELETE',
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(removeCrewMessage, `Załogant ${crewId} odwołany ze statku pomyślnie!`, 'success');
+                    e.target.reset();
+                    fetchShips(); // Odśwież listę
+                } else {
+                    showMessage(removeCrewMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas odwoływania załoganta:', error);
+                showMessage(removeCrewMessage, 'Wystąpił błąd podczas odwoływania załoganta.', 'error');
+            }
+        });
+
+        // CREW: Lista załogi
+        document.getElementById('list-crew-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const roleFilter = document.getElementById('crewRoleFilter').value;
+            const crewListResults = document.getElementById('crew-list-results');
+            crewListResults.innerHTML = '<p>Ładowanie załogi...</p>';
+
+            let url = '/api/crew';
+            if (roleFilter) {
+                url += `?role=${encodeURIComponent(roleFilter)}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                const crew = await response.json();
+                if (response.ok) {
+                    if (crew.length === 0) {
+                        crewListResults.innerHTML = '<p>Brak załogi spełniającej kryteria.</p>';
+                        return;
+                    }
+                    crewListResults.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Imię</th>
+                                    <th>Rola</th>
+                                    <th>Ranga</th>
+                                    <th>Zdolny do służby</th>
+                                    <th>Doświadczenie (lata)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${crew.map(c => `
+                                    <tr>
+                                        <td>${c._id}</td>
+                                        <td>${c.name}</td>
+                                        <td>${c.role}</td>
+                                        <td>${c.rank}</td>
+                                        <td>${c.medical?.fit_for_duty ? 'Tak' : 'Nie'}</td>
+                                        <td>${c.experience_years}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    showMessage(crewListResults, `Błąd: ${crew.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania listy załogi:', error);
+                showMessage(crewListResults, 'Wystąpił błąd podczas pobierania listy załogi.', 'error');
+            }
+        });
+
+        // CREW: Szczegóły załoganta
+        document.getElementById('get-crew-member-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const crewId = document.getElementById('getCrewMemberSelect').value;
+            const crewMemberDetailsDiv = document.getElementById('crew-member-details');
+            if (!crewId) {
+                showMessage(crewMemberDetailsDiv, 'Wybierz załoganta.', 'warning');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/crew/${crewId}`);
+                const member = await response.json();
+                if (response.ok) {
+                    crewMemberDetailsDiv.innerHTML = `
+                        <h3>${member.name} (${member.role})</h3>
+                        <p><strong>ID:</strong> ${member._id}</p>
+                        <p><strong>Ranga:</strong> ${member.rank}</p>
+                        <p><strong>Certyfikaty:</strong> ${member.certifications?.join(', ') || 'Brak'}</p>
+                        <p><strong>Lata doświadczenia:</strong> ${member.experience_years}</p>
+                        <h4>Dane medyczne:</h4>
+                        <ul>
+                            <li>Grupa krwi: ${member.medical?.blood_type || 'N/A'}</li>
+                            <li>Ostatnie badanie: ${formatDate(member.medical?.last_checkup)}</li>
+                            <li>Zdolny do służby: ${member.medical?.fit_for_duty ? 'Tak' : 'Nie'}</li>
+                        </ul>
+                        <h4>Przydziały (statki):</h4>
+                        <ul>
+                            ${member.assignments && member.assignments.length > 0 ? member.assignments.map(s => `<li>${s.name} (${s.registry}) - Status: ${s.status} (ID: ${s._id})</li>`).join('') : '<li>Brak przydziałów</li>'}
+                        </ul>
+                    `;
+                } else {
+                    showMessage(crewMemberDetailsDiv, `Błąd: ${member.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania szczegółów załoganta:', error);
+                showMessage(crewMemberDetailsDiv, 'Wystąpił błąd podczas pobierania szczegółów załoganta.', 'error');
+            }
+        });
+
+        // CREW: Stwórz nowego załoganta
+        document.getElementById('create-crew-member-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const certifications = form.elements['newCrewCertifications'].value.split(',').map(c => c.trim()).filter(Boolean);
+
+            const data = {
+                name: form.elements['newCrewName'].value,
+                role: form.elements['newCrewRole'].value,
+                rank: form.elements['newCrewRank'].value || "Ensign",
+                certifications: certifications,
+                medical: {
+                    blood_type: form.elements['newCrewBloodType'].value || "Unknown",
+                    fit_for_duty: true, // Domyślnie zdolny do służby
+                },
+                experience_years: parseInt(form.elements['newCrewExperienceYears'].value) || 0,
+            };
+
+            const createCrewMessage = document.getElementById('create-crew-message');
+            try {
+                const response = await fetch('/api/crew', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(createCrewMessage, `Załogant "${result.name}" (${result._id}) stworzony pomyślnie!`, 'success');
+                    form.reset();
+                    fetchCrew(); // Odśwież listy rozwijane załogi
+                } else {
+                    showMessage(createCrewMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas tworzenia załoganta:', error);
+                showMessage(createCrewMessage, 'Wystąpił błąd podczas tworzenia załoganta.', 'error');
+            }
+        });
+
+        // CREW: Aktualizuj status medyczny załoganta
+        document.getElementById('update-medical-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const crewId = document.getElementById('medicalCrewSelect').value;
+            const updateMedicalMessage = document.getElementById('update-medical-message');
+            const medicalLastCheckup = document.getElementById('medicalLastCheckup').value;
+
+            if (!crewId) {
+                showMessage(updateMedicalMessage, "Wybierz załoganta do aktualizacji statusu medycznego.", 'warning');
+                return;
+            }
+
+            const data = {
+                fit_for_duty: document.getElementById('medicalFitForDuty').checked,
+            };
+            if (medicalLastCheckup) {
+                data.last_checkup = new Date(medicalLastCheckup).toISOString();
+            }
+
+            try {
+                const response = await fetch(`/api/crew/${crewId}/medical`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(updateMedicalMessage, 'Status medyczny załoganta zaktualizowany pomyślnie!', 'success');
+                    e.target.reset();
+                    fetchCrew(); // Odśwież listy załogi, bo status medyczny jest wyświetlany
+                } else {
+                    showMessage(updateMedicalMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas aktualizacji statusu medycznego:', error);
+                showMessage(updateMedicalMessage, 'Wystąpił błąd podczas aktualizacji statusu medycznego.', 'error');
+            }
+        });
+
+        // ROUTES: Lista tras
+        document.getElementById('list-routes-button').addEventListener('click', async () => {
+            const routeListResults = document.getElementById('route-list-results');
+            routeListResults.innerHTML = '<p>Ładowanie tras...</p>';
+
+            try {
+                const response = await fetch('/api/routes');
+                const routes = await response.json();
+                if (response.ok) {
+                    if (routes.length === 0) {
+                        routeListResults.innerHTML = '<p>Brak tras w bazie danych.</p>';
+                        return;
+                    }
+                    routeListResults.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nazwa</th>
+                                    <th>Poziom zagrożenia</th>
+                                    <th>Długość (AU)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${routes.map(r => `
+                                    <tr>
+                                        <td>${r._id}</td>
+                                        <td>${r.name}</td>
+                                        <td>${r.hazard_level}</td>
+                                        <td>${r.length_au}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    showMessage(routeListResults, `Błąd: ${routes.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania listy tras:', error);
+                showMessage(routeListResults, 'Wystąpił błąd podczas pobierania listy tras.', 'error');
+            }
+        });
+
+        // TELEMETRY: Dodaj nowy odczyt telemetrii
+        document.getElementById('add-telemetry-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('telemetryShipSelect').value;
+            const addTelemetryMessage = document.getElementById('add-telemetry-message');
+
+            if (!shipId) {
+                showMessage(addTelemetryMessage, "Wybierz statek, dla którego chcesz dodać telemetrię.", 'warning');
+                return;
+            }
+
+            const data = {
+                temperature_celsius: parseFloat(document.getElementById('temperatureCelsius').value),
+                radiation_msv: parseFloat(document.getElementById('radiationMsv').value),
+                fuel_consumption_kg_h: parseFloat(document.getElementById('fuelConsumptionKgH').value),
+                speed_km_s: parseFloat(document.getElementById('speedKmS').value),
+            };
+
+            try {
+                const response = await fetch(`/api/telemetry/${shipId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(addTelemetryMessage, `Odczyt telemetrii dodany dla statku ${shipId} pomyślnie!`, 'success');
+                    e.target.reset();
+                } else {
+                    showMessage(addTelemetryMessage, `Błąd: ${result.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas dodawania telemetrii:', error);
+                showMessage(addTelemetryMessage, 'Wystąpił błąd podczas dodawania telemetrii.', 'error');
+            }
+        });
+
+        // TELEMETRY: Pobierz odczyty telemetrii
+        document.getElementById('get-telemetry-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('getTelemetryShipSelect').value;
+            const limit = document.getElementById('telemetryLimit').value;
+            const telemetryReadingsDiv = document.getElementById('telemetry-readings');
+            telemetryReadingsDiv.innerHTML = '<p>Ładowanie odczytów telemetrii...</p>';
+
+            if (!shipId) {
+                showMessage(telemetryReadingsDiv, "Wybierz statek, dla którego chcesz pobrać telemetrię.", 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/telemetry/${shipId}?limit=${limit}`);
+                const readings = await response.json();
+                if (response.ok) {
+                    if (readings.length === 0) {
+                        telemetryReadingsDiv.innerHTML = '<p>Brak odczytów telemetrii dla tego statku.</p>';
+                        return;
+                    }
+                    telemetryReadingsDiv.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID Odczytu</th>
+                                    <th>Czas</th>
+                                    <th>Temp (°C)</th>
+                                    <th>Radiacja (mSv)</th>
+                                    <th>Zużycie paliwa (kg/h)</th>
+                                    <th>Prędkość (km/s)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${readings.map(r => `
+                                    <tr>
+                                        <td>${r._id}</td>
+                                        <td>${new Date(r.timestamp).toLocaleString()}</td>
+                                        <td>${r.temperature_celsius}</td>
+                                        <td>${r.radiation_msv}</td>
+                                        <td>${r.fuel_consumption_kg_h}</td>
+                                        <td>${r.speed_km_s}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    showMessage(telemetryReadingsDiv, `Błąd: ${readings.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania odczytów telemetrii:', error);
+                showMessage(telemetryReadingsDiv, 'Wystąpił błąd podczas pobierania odczytów telemetrii.', 'error');
+            }
+        });
+
+        // ANALYTICS: Podsumowanie floty
+        document.getElementById('fleet-summary-button').addEventListener('click', async () => {
+            const fleetSummaryResults = document.getElementById('fleet-summary-results');
+            fleetSummaryResults.innerHTML = '<p>Ładowanie podsumowania floty...</p>';
+
+            try {
+                const response = await fetch('/api/analytics/fleet-summary');
+                const summary = await response.json();
+                if (response.ok) {
+                    if (Object.keys(summary).length === 0) {
+                        fleetSummaryResults.innerHTML = '<p>Brak danych do podsumowania.</p>';
+                        return;
+                    }
+                    fleetSummaryResults.innerHTML = `
+                        <h3>Podsumowanie Floty</h3>
+                        <p><strong>Łączna liczba statków:</strong> ${summary.total_ships || 0}</p>
+                        <p><strong>Statki w transicie:</strong> ${summary.in_transit || 0}</p>
+                        <p><strong>Statki zadokowane:</strong> ${summary.docked || 0}</p>
+                        <p><strong>Statki w stanie awaryjnym:</strong> ${summary.emergency || 0}</p>
+                        <p><strong>Średnia integralność kadłuba:</strong> ${summary.avg_hull ? summary.avg_hull.toFixed(2) : 'N/A'}%</p>
+                        <p><strong>Średnie pozostałe paliwo:</strong> ${summary.avg_fuel ? summary.avg_fuel.toFixed(2) : 'N/A'}%</p>
+                        <p><strong>Łączna liczba typów ładunku:</strong> ${summary.total_cargo_types || 0}</p>
+                    `;
+                } else {
+                    showMessage(fleetSummaryResults, `Błąd: ${summary.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania podsumowania floty:', error);
+                showMessage(fleetSummaryResults, 'Wystąpił błąd podczas pobierania podsumowania floty.', 'error');
+            }
+        });
+
+        // ANALYTICS: Misje krytyczne
+        document.getElementById('critical-missions-button').addEventListener('click', async () => {
+            const criticalMissionsResults = document.getElementById('critical-missions-results');
+            criticalMissionsResults.innerHTML = '<p>Ładowanie misji krytycznych...</p>';
+
+            try {
+                const response = await fetch('/api/analytics/critical-missions');
+                const missions = await response.json();
+                if (response.ok) {
+                    if (missions.length === 0) {
+                        criticalMissionsResults.innerHTML = '<p>Brak misji krytycznych spełniających kryteria.</p>';
+                        return;
+                    }
+                    criticalMissionsResults.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nazwa Statku</th>
+                                    <th>Rejestr</th>
+                                    <th>Trasa</th>
+                                    <th>Hazard</th>
+                                    <th>ETA</th>
+                                    <th>Załoga</th>
+                                    <th>Lekarz</th>
+                                    <th>Żywność (%)</th>
+                                    <th>Paliwo (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${missions.map(m => `
+                                    <tr>
+                                        <td>${m.name}</td>
+                                        <td>${m.registry}</td>
+                                        <td>${m.route?.name || 'N/A'}</td>
+                                        <td>${m.route?.hazard_level || 'N/A'}</td>
+                                        <td>${formatDate(m.eta)}</td>
+                                        <td>${m.crew_count}</td>
+                                        <td>${m.has_doctor ? 'Tak' : 'Nie'}</td>
+                                        <td>${m.food_percent?.toFixed(1) || 'N/A'}</td>
+                                        <td>${m.systems?.fuel_remaining_percent}%</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    showMessage(criticalMissionsResults, `Błąd: ${missions.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania misji krytycznych:', error);
+                showMessage(criticalMissionsResults, 'Wystąpił błąd podczas pobierania misji krytycznych.', 'error');
+            }
+        });
+
+        // ANALYTICS: Rozkład ładunku
+        document.getElementById('cargo-breakdown-button').addEventListener('click', async () => {
+            const cargoBreakdownResults = document.getElementById('cargo-breakdown-results');
+            cargoBreakdownResults.innerHTML = '<p>Ładowanie rozkładu ładunku...</p>';
+
+            try {
+                const response = await fetch('/api/analytics/cargo-breakdown');
+                const breakdown = await response.json();
+                if (response.ok) {
+                    if (breakdown.length === 0) {
+                        cargoBreakdownResults.innerHTML = '<p>Brak danych o ładunku.</p>';
+                        return;
+                    }
+                    cargoBreakdownResults.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Typ Ładunku</th>
+                                    <th>Całkowita masa (kg)</th>
+                                    <th>Liczba pozycji</th>
+                                    <th>Niebezpieczne (pozycje)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${breakdown.map(c => `
+                                    <tr>
+                                        <td>${c._id}</td>
+                                        <td>${c.total_kg}</td>
+                                        <td>${c.item_count}</td>
+                                        <td>${c.hazardous_count}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    showMessage(cargoBreakdownResults, `Błąd: ${breakdown.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania rozkładu ładunku:', error);
+                showMessage(cargoBreakdownResults, 'Wystąpił błąd podczas pobierania rozkładu ładunku.', 'error');
+            }
+        });
+
+        // ANALYTICS: Średnie parametry telemetrii za okres
+        document.getElementById('telemetry-avg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = document.getElementById('avgTelemetryShipSelect').value;
+            const hours = document.getElementById('avgTelemetryHours').value;
+            const telemetryAvgResults = document.getElementById('telemetry-avg-results');
+            telemetryAvgResults.innerHTML = '<p>Ładowanie średnich parametrów telemetrii...</p>';
+
+            if (!shipId) {
+                showMessage(telemetryAvgResults, "Wybierz statek.", 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/analytics/telemetry-avg/${shipId}?hours=${hours}`);
+                const avgData = await response.json();
+                if (response.ok) {
+                    if (Object.keys(avgData).length === 0) {
+                        telemetryAvgResults.innerHTML = '<p>Brak danych telemetrycznych dla tego okresu.</p>';
+                        return;
+                    }
+                    telemetryAvgResults.innerHTML = `
+                        <h3>Średnie parametry telemetrii za ostatnie ${hours} godzin</h3>
+                        <p><strong>Liczba odczytów:</strong> ${avgData.readings || 0}</p>
+                        <p><strong>Średnia temperatura (°C):</strong> ${avgData.avg_temp ? avgData.avg_temp.toFixed(2) : 'N/A'}</p>
+                        <p><strong>Średnia radiacja (mSv):</strong> ${avgData.avg_radiation ? avgData.avg_radiation.toFixed(2) : 'N/A'}</p>
+                        <p><strong>Średnie zużycie paliwa (kg/h):</strong> ${avgData.avg_fuel_consumption ? avgData.avg_fuel_consumption.toFixed(2) : 'N/A'}</p>
+                        <p><strong>Średnia prędkość (km/s):</strong> ${avgData.avg_speed ? avgData.avg_speed.toFixed(2) : 'N/A'}</p>
+                    `;
+                } else {
+                    showMessage(telemetryAvgResults, `Błąd: ${avgData.error || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania średnich telemetrii:', error);
+                showMessage(telemetryAvgResults, 'Wystąpił błąd podczas pobierania średnich telemetrii.', 'error');
+            }
+        });
+
+        // TRANSACTIONS: Przeniesienie załoganta
+        document.getElementById('transfer-crew-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const crew_id = document.getElementById('transferCrewIdInput').value.trim();
+            const source_ship_id = document.getElementById('transferSourceShipSelect').value;
+            const destination_ship_id = document.getElementById('transferDestShipSelect').value;
+            const transferMessage = document.getElementById('transfer-message');
 
             transferMessage.textContent = ''; // Wyczyść poprzednie komunikaty
 
             if (!crew_id || !source_ship_id || !destination_ship_id) {
-                transferMessage.textContent = "Wypełnij wszystkie pola!";
-                transferMessage.style.color = 'red';
+                showMessage(transferMessage, "Wypełnij wszystkie pola!", 'warning');
                 return;
             }
 
             if (source_ship_id === destination_ship_id) {
-                transferMessage.textContent = "Statek źródłowy i docelowy muszą być różne!";
-                transferMessage.style.color = 'orange';
+                showMessage(transferMessage, "Statek źródłowy i docelowy muszą być różne!", 'warning');
                 return;
-            }
-
-            // Opcjonalne sprawdzenie po stronie klienta, czy załogant jest na statku źródłowym
-            // Backend i tak to zabezpieczy, ale to poprawia UX.
-            const sourceShip = allShips.find(s => s._id === source_ship_id);
-            if (sourceShip && !sourceShip.crew_ids.includes(crew_id)) {
-                 transferMessage.textContent = `Załogant o ID ${crew_id} nie został znaleziony na statku źródłowym. Transakcja może być nieskuteczna.`;
-                 transferMessage.style.color = 'orange';
-                 // Kontynuujemy, bo backend i tak to obsłuży atomowo, ale dajemy ostrzeżenie.
             }
 
             try {
@@ -201,22 +1332,20 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    transferMessage.textContent = result.message;
-                    transferMessage.style.color = 'lightgreen';
+                    showMessage(transferMessage, result.message, 'success');
                     fetchShips(); // Odśwież listę statków po transakcji
                 } else {
-                    transferMessage.textContent = `Błąd transakcji: ${result.error || response.statusText}`;
-                    transferMessage.style.color = 'red';
+                    showMessage(transferMessage, `Błąd transakcji: ${result.error || response.statusText}`, 'error');
                 }
             } catch (error) {
                 console.error('Błąd podczas transakcji przenoszenia załoganta:', error);
-                transferMessage.textContent = 'Wystąpił błąd podczas transakcji. Sprawdź konsolę przeglądarki i logi serwera.';
-                transferMessage.style.color = 'red';
+                showMessage(transferMessage, 'Wystąpił błąd podczas transakcji. Sprawdź konsolę przeglądarki i logi serwera.', 'error');
             }
         });
 
-        // Ustanowienie połączenia z Change Stream (SSE)
+        // CHANGE STREAMS: Ustanowienie połączenia z Change Stream (SSE)
         function setupChangeStream() {
+            const realtimeUpdatesDiv = document.getElementById('realtime-updates');
             if (typeof EventSource !== 'undefined') {
                 const source = new EventSource('/api/watch/ships');
 
@@ -239,7 +1368,11 @@
                     if (data.fullDocument) {
                         message += `<br>Statek: <strong>${data.fullDocument.name}</strong>, Status: ${data.fullDocument.status}, Załoga: ${data.fullDocument.crew_ids ? data.fullDocument.crew_ids.length : 0}`;
                     } else if (data.updateDescription) {
-                        message += `<br>Zmienione pola: ${Object.keys(data.updateDescription.updatedFields).join(', ')}`;
+                        const updatedFields = Object.keys(data.updateDescription.updatedFields).map(field => {
+                            const value = data.updateDescription.updatedFields[field];
+                            return `${field}: ${JSON.stringify(value)}`;
+                        }).join(', ');
+                        message += `<br>Zmienione pola: ${updatedFields}`;
                     } else if (data.operationType === 'delete') {
                         message += `<br>Dokument został usunięty.`;
                     }
@@ -253,17 +1386,21 @@
 
                 source.onerror = function(error) {
                     console.error('Błąd Change Stream (SSE):', error);
-                    realtimeUpdatesDiv.innerHTML += '<p style="color: red;">Błąd połączenia z Change Stream. Upewnij się, że MongoDB działa jako replikaset.</p>';
+                    realtimeUpdatesDiv.innerHTML += '<p class="result-message error" style="color: red;">Błąd połączenia z Change Stream. Upewnij się, że MongoDB działa jako replikaset.</p>';
                     source.close();
                 };
             } else {
-                realtimeUpdatesDiv.innerHTML = '<p style="color: red;">Twoja przeglądarka nie obsługuje Server-Sent Events.</p>';
+                realtimeUpdatesDiv.innerHTML = '<p class="result-message error" style="color: red;">Twoja przeglądarka nie obsługuje Server-Sent Events.</p>';
             }
         }
 
-        // Inicjalizacja: pobierz statki i uruchom Change Stream
-        fetchShips();
-        setupChangeStream();
+        // --- INICJALIZACJA APLIKACJI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchShips();
+            fetchCrew();
+            fetchRoutes();
+            setupChangeStream();
+        });
     </script>
 </body>
 </html>

@@ -53,7 +53,7 @@ h2 {
 
 .container {
     width: 100%;
-    max-width: 1000px; /* Nieco szerszy kontener */
+    max-width: 1200px; /* Zwiększona szerokość kontenera głównego */
     margin: 0 auto;
     background-color: var(--color-secondary-bg);
     padding: 35px;
@@ -129,7 +129,7 @@ button:hover, input[type="submit"]:hover {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
-input[type="text"], input[type="number"], select {
+input[type="text"], input[type="number"], input[type="date"], select, textarea { /* Dodano input[type="date"], textarea */
     padding: 12px;
     margin-right: 15px;
     border: 1px solid var(--color-border);
@@ -141,7 +141,13 @@ input[type="text"], input[type="number"], select {
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-input[type="text"]:focus, input[type="number"]:focus, select:focus {
+input[type="checkbox"] { /* Styl dla checkboxa */
+    margin-left: 5px;
+    transform: scale(1.2);
+    accent-color: var(--color-highlight);
+}
+
+input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
     border-color: var(--color-highlight);
     outline: none;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3); /* Delikatna poświata */
@@ -173,14 +179,15 @@ label {
     font-weight: 500;
 }
 
-.realtime-updates {
+.realtime-updates, .analytics-results, .telemetry-results, .crew-details, .route-details { /* Nowe klasy dla stylów */
     background-color: var(--color-primary-bg);
     padding: 20px;
     border-radius: 10px;
-    max-height: 300px; /* Zwiększona wysokość */
+    max-height: 400px; /* Zwiększona wysokość dla lepszej czytelności */
     overflow-y: auto;
     border: 1px solid var(--color-border);
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+    margin-top: 20px; /* Dodatkowy margines */
 }
 
 .realtime-updates p {
@@ -192,37 +199,68 @@ label {
     border-bottom: 1px dotted var(--color-border);
     font-size: 0.9em;
     color: var(--color-text-light);
-    animation: fadeIn 0.5s ease-out; /* Animacja pojawiania się */
+    animation: fadeIn 0.5s ease-out;
 }
 .update-item:last-child {
     border-bottom: none;
 }
 .update-item strong {
-    color: var(--color-highlight); /* Wyróżnienie dla typu operacji */
+    color: var(--color-highlight);
 }
 
-p#transfer-message {
+p#transfer-message, p.result-message { /* Klasa dla wszystkich komunikatów wynikowych */
     margin-top: 20px;
     padding: 10px;
     border-radius: 5px;
     font-weight: bold;
     text-align: center;
-    background-color: rgba(0,0,0,0.2); /* Lekkie tło dla wiadomości */
+    background-color: rgba(0,0,0,0.2);
+    min-height: 20px; /* Zapewnij minimalną wysokość, aby nie "skakało" */
 }
-p#transfer-message[style*="lightgreen"] {
+p.result-message.success {
     color: white;
     background-color: var(--color-highlight);
     border: 1px solid #388E3C;
 }
-p#transfer-message[style*="orange"] {
+p.result-message.warning {
     color: white;
     background-color: var(--color-warning);
     border: 1px solid #E65100;
 }
-p#transfer-message[style*="red"] {
+p.result-message.error {
     color: white;
     background-color: var(--color-error);
     border: 1px solid #D32F2F;
+}
+
+/* Style dla tabel */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background-color: var(--color-tertiary-bg);
+    border-radius: 8px;
+    overflow: hidden; /* Upewnij się, że rogi są zaokrąglone */
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-light);
+}
+
+th {
+    background-color: var(--color-secondary-bg);
+    font-family: 'Orbitron', sans-serif;
+    color: var(--color-text-accent);
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+}
+
+tr:hover {
+    background-color: #4A4A8A; /* Delikatniejszy hover dla wierszy */
 }
 
 /* Scrollbar styling */
@@ -265,7 +303,7 @@ p#transfer-message[style*="red"] {
         flex-direction: column;
         align-items: stretch;
     }
-    input[type="text"], input[type="number"], select, button, input[type="submit"] {
+    input[type="text"], input[type="number"], input[type="date"], select, textarea, button, input[type="submit"] {
         width: 100%;
         margin-right: 0;
     }
