@@ -1,14 +1,4 @@
-"""
-INTERSTELLAR LOGISTICS MANAGER — Flask Backend
-Surowe zapytania PyMongo, zero ORM.
-
-Uruchomienie:
-    pip install -r requirements.txt
-    python seed.py
-    python app.py
-"""
-
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response # Dodano Response
 from flask_cors import CORS
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -16,7 +6,7 @@ import os, json
 
 from db import get_db
 
-app = Flask(__name__, static_folder="../templates", static_url_path="")
+app = Flask(__name__, static_folder='../static', static_url_path='/static')
 CORS(app)
 
 # ── Pomocnik: konwersja ObjectId/datetime → JSON ──────────────
@@ -32,7 +22,6 @@ def to_json(doc):
     if isinstance(doc, datetime):
         return doc.isoformat()
     return doc
-
 
 # ═══════════════════════════════════════════════════════════════
 # SHIPS
@@ -81,7 +70,6 @@ def list_ships():
     ships = list(db["ships"].aggregate(pipeline))
     return jsonify(to_json(ships))
 
-
 @app.route("/api/ships/<ship_id>", methods=["GET"])
 def get_ship(ship_id):
     """
@@ -119,7 +107,6 @@ def get_ship(ship_id):
         return jsonify({"error": "Statek nie znaleziony"}), 404
     return jsonify(to_json(result[0]))
 
-
 @app.route("/api/ships", methods=["POST"])
 def create_ship():
     """Dodaj nowy statek."""
@@ -149,7 +136,6 @@ def create_ship():
     doc["_id"] = result.inserted_id
     return jsonify(to_json(doc)), 201
 
-
 @app.route("/api/ships/<ship_id>/status", methods=["PATCH"])
 def update_ship_status(ship_id):
     """Zmień status statku."""
@@ -168,7 +154,6 @@ def update_ship_status(ship_id):
     )
     return jsonify({"success": True, "status": status})
 
-
 @app.route("/api/ships/<ship_id>/systems", methods=["PATCH"])
 def update_ship_systems(ship_id):
     """Aktualizuj parametry systemów pokładowych."""
@@ -183,7 +168,6 @@ def update_ship_systems(ship_id):
 
     db["ships"].update_one({"_id": ObjectId(ship_id)}, {"$set": update})
     return jsonify({"success": True})
-
 
 # ── Cargo (embedded array operations) ─────────────────────────
 
@@ -212,7 +196,6 @@ def add_cargo(ship_id):
     )
     return jsonify(to_json(item)), 201
 
-
 @app.route("/api/ships/<ship_id>/cargo/<item_id>", methods=["DELETE"])
 def remove_cargo(ship_id, item_id):
     """
@@ -225,7 +208,6 @@ def remove_cargo(ship_id, item_id):
         {"$pull": {"cargo": {"item_id": item_id}}}   # $pull z warunkowym dopasowaniem
     )
     return jsonify({"success": True})
-
 
 # ── Crew assignment ────────────────────────────────────────────
 
@@ -244,7 +226,6 @@ def assign_crew(ship_id):
     )
     return jsonify({"success": True})
 
-
 @app.route("/api/ships/<ship_id>/crew/<crew_id>", methods=["DELETE"])
 def remove_crew_from_ship(ship_id, crew_id):
     """Odwołaj załoganta ze statku ($pull z tablicy crew_ids)."""
@@ -254,7 +235,6 @@ def remove_crew_from_ship(ship_id, crew_id):
         {"$pull": {"crew_ids": ObjectId(crew_id)}}
     )
     return jsonify({"success": True})
-
 
 # ═══════════════════════════════════════════════════════════════
 # CREW
@@ -270,7 +250,6 @@ def list_crew():
 
     crew = list(db["crew"].find(query).sort("name", 1))
     return jsonify(to_json(crew))
-
 
 @app.route("/api/crew/<crew_id>", methods=["GET"])
 def get_crew_member(crew_id):
@@ -293,7 +272,6 @@ def get_crew_member(crew_id):
 
     member["assignments"] = assignments
     return jsonify(to_json(member))
-
 
 @app.route("/api/crew", methods=["POST"])
 def create_crew_member():
@@ -318,7 +296,6 @@ def create_crew_member():
     doc["_id"] = result.inserted_id
     return jsonify(to_json(doc)), 201
 
-
 @app.route("/api/crew/<crew_id>/medical", methods=["PATCH"])
 def update_medical(crew_id):
     """Aktualizuj status medyczny."""
@@ -336,7 +313,6 @@ def update_medical(crew_id):
     db["crew"].update_one({"_id": ObjectId(crew_id)}, {"$set": update})
     return jsonify({"success": True})
 
-
 # ═══════════════════════════════════════════════════════════════
 # ROUTES
 # ═══════════════════════════════════════════════════════════════
@@ -346,7 +322,6 @@ def list_routes():
     db = get_db()
     routes = list(db["routes"].find({}).sort("name", 1))
     return jsonify(to_json(routes))
-
 
 # ═══════════════════════════════════════════════════════════════
 # TELEMETRY
@@ -370,7 +345,6 @@ def get_telemetry(ship_id):
     readings.reverse()   # chronologicznie dla wykresu
     return jsonify(to_json(readings))
 
-
 @app.route("/api/telemetry/<ship_id>", methods=["POST"])
 def add_telemetry(ship_id):
     """Dodaj nowy odczyt telemetrii."""
@@ -380,7 +354,6 @@ def add_telemetry(ship_id):
     result = db["telemetry"].insert_one(doc)
     doc["_id"] = result.inserted_id
     return jsonify(to_json(doc)), 201
-
 
 # ═══════════════════════════════════════════════════════════════
 # ANALYTICS — Aggregation Pipeline
@@ -410,7 +383,6 @@ def fleet_summary():
 
     result = list(db["ships"].aggregate(pipeline))
     return jsonify(to_json(result[0] if result else {}))
-
 
 @app.route("/api/analytics/critical-missions", methods=["GET"])
 def critical_missions():
@@ -458,7 +430,7 @@ def critical_missions():
                     "$filter": {
                         "input": "$cargo",
                         "as": "item",
-                        "cond": {"$eq": ["$$item.type", "food"]},
+                        "cond": {"$eq": ["$item.type", "food"]},
                     }
                 },
                 # Sprawdź czy w tablicy crew jest lekarz
@@ -470,7 +442,7 @@ def critical_missions():
                                     "input": "$crew",
                                     "as": "c",
                                     "cond": {
-                                        "$in": ["$$c.role", ["Chief Medical Officer", "Medical Officer"]]
+                                        "$in": ["$c.role", ["Chief Medical Officer", "Medical Officer"]]
                                     },
                                 }
                             }
@@ -523,7 +495,6 @@ def critical_missions():
     results = list(db["ships"].aggregate(pipeline))
     return jsonify(to_json(results))
 
-
 @app.route("/api/analytics/cargo-breakdown", methods=["GET"])
 def cargo_breakdown():
     """
@@ -549,7 +520,6 @@ def cargo_breakdown():
 
     results = list(db["ships"].aggregate(pipeline))
     return jsonify(to_json(results))
-
 
 @app.route("/api/analytics/telemetry-avg/<ship_id>", methods=["GET"])
 def telemetry_avg(ship_id):
@@ -580,6 +550,114 @@ def telemetry_avg(ship_id):
     result = list(db["ships"].aggregate(pipeline))
     return jsonify(to_json(result[0] if result else {}))
 
+# ═══════════════════════════════════════════════════════════════
+# TRANSACTIONS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/api/transactions/transfer-crew", methods=["POST"])
+def transfer_crew_member():
+    """
+    Transakcja wielodokumentowa: przeniesienie członka załogi między statkami.
+    Usuwa crew_id ze statku źródłowego i dodaje do statku docelowego,
+    zapewniając atomowość operacji na dwóch dokumentach statków.
+    """
+    db = get_db()
+    data = request.get_json()
+
+    crew_id = data.get("crew_id")
+    source_ship_id = data.get("source_ship_id")
+    destination_ship_id = data.get("destination_ship_id")
+
+    if not all([crew_id, source_ship_id, destination_ship_id]):
+        return jsonify({"error": "Wymagane pola: crew_id, source_ship_id, destination_ship_id"}), 400
+
+    try:
+        crew_oid = ObjectId(crew_id)
+        source_ship_oid = ObjectId(source_ship_id)
+        destination_ship_oid = ObjectId(destination_ship_id)
+    except Exception:
+        return jsonify({"error": "Nieprawidłowy format ID"}), 400
+
+    # Pobierz klienta MongoDB, aby rozpocząć sesję i transakcję
+    client = db.client
+
+    # Rozpocznij sesję i transakcję
+    with client.start_session() as session:
+        session.start_transaction()
+        try:
+            # 1. Usuń załoganta ze statku źródłowego
+            # Operacja jest częścią transakcji dzięki parametrowi session
+            source_update_result = db["ships"].update_one(
+                {"_id": source_ship_oid},
+                {"$pull": {"crew_ids": crew_oid}},
+                session=session
+            )
+
+            # 2. Dodaj załoganta do statku docelowego
+            # Używamy $addToSet, aby upewnić się, że załogant nie zostanie dodany dwukrotnie
+            dest_update_result = db["ships"].update_one(
+                {"_id": destination_ship_oid},
+                {"$addToSet": {"crew_ids": crew_oid}},
+                session=session
+            )
+
+            # Opcjonalne sprawdzenie, czy faktycznie dokonano modyfikacji
+            # Jeśli np. załogant nie był na statku źródłowym, source_update_result.modified_count będzie 0.
+            # Transakcja i tak się powiedzie, jeśli nie będzie błędów.
+
+            session.commit_transaction() # Zatwierdź transakcję, jeśli obie operacje się powiodły
+            return jsonify({
+                "success": True,
+                "message": f"Załogant {crew_id} przeniesiony ze statku {source_ship_id} na {destination_ship_id}."
+            })
+
+        except Exception as e:
+            session.abort_transaction() # Wycofaj transakcję w przypadku błędu
+            return jsonify({"error": f"Transakcja nieudana: {str(e)}. Zmiany zostały wycofane."}), 500
+
+# ═══════════════════════════════════════════════════════════════
+# CHANGE STREAMS (WATCH)
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/api/watch/ships", methods=["GET"])
+def watch_ships():
+    """
+    Otwiera strumień zmian dla kolekcji 'ships' i wysyła wydarzenia
+    jako Server-Sent Events (SSE). Klient może nasłuchiwać tego endpointu,
+    aby otrzymywać aktualizacje w czasie rzeczywistym.
+
+    Wymaga replikasetu MongoDB do działania.
+    """
+    db = get_db()
+    client = db.client # Pobierz klienta z obiektu bazy danych
+
+    # Funkcja generatora, która będzie wysyłać wydarzenia SSE
+    def generate_events():
+        # Używamy kontekstu menedżera dla kursora change stream
+        # Strumień zostanie automatycznie zamknięty, gdy klient się rozłączy lub wystąpi błąd
+        try:
+            # 'full_document='updateLookup'' jest kluczowe, aby otrzymać cały dokument
+            # po operacji 'update' lub 'replace', nie tylko zmienione pola.
+            # watch() może być wywołane na kolekcji, bazie danych lub kliencie.
+            # Wywołanie na kliencie pozwala na oglądanie wielu kolekcji lub całej bazy danych.
+            # Tutaj oglądamy konkretną kolekcję 'ships'.
+            with db["ships"].watch(full_document='updateLookup') as stream:
+                print("Change stream otwarty dla kolekcji 'ships'.")
+                for change in stream:
+                    # Filtrujemy tylko istotne operacje (insert, update, delete, replace)
+                    if change['operationType'] in ['insert', 'update', 'replace', 'delete']:
+                        event_data = to_json(change) # Konwertujemy obiekt zmiany na format JSON
+                        # Format SSE: data: [JSON string]\n\n
+                        yield f"data: {json.dumps(event_data)}\n\n"
+        except Exception as e:
+            print(f"Błąd w change stream: {e}")
+            # Opcjonalnie wyślij wydarzenie błędu przed zamknięciem strumienia
+            yield f"data: {json.dumps({'error': str(e), 'message': 'Change stream closed due to an error.'})}\n\n"
+
+    # Ustaw nagłówki odpowiedzi dla Server-Sent Events
+    # 'text/event-stream' jest standardowym typem MIME dla SSE
+    return Response(generate_events(), mimetype="text/event-stream")
+
 from flask import render_template
 
 @app.route("/")
@@ -587,9 +665,11 @@ from flask import render_template
 def serve_frontend(path=""):
     return render_template("index.html")
 
-
 if __name__ == "__main__":
     print("\n🚀 Interstellar Logistics Manager — Flask Backend")
     print("   http://localhost:3000")
     print("   Pierwsze uruchomienie? Najpierw: python seed.py\n")
+    print("Nowe funkcje:")
+    print("   Transakcja wielodokumentowa: POST /api/transactions/transfer-crew")
+    print("   Change Stream (SSE): GET /api/watch/ships")
     app.run(host="0.0.0.0", port=3000, debug=True)

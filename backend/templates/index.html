@@ -1,1149 +1,269 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interstellar Logistics — Command Console</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
-  <style>
-    /* ── DESIGN TOKENS ───────────────────────────────────────── */
-    :root {
-      --bg:        #03080f;
-      --bg2:       #070e1a;
-      --bg3:       #0b1628;
-      --panel:     #0d1c31;
-      --border:    #1a3a5c;
-      --border2:   #0f2540;
-      --accent:    #00c8ff;
-      --accent2:   #0086cc;
-      --gold:      #f0a500;
-      --red:       #ff3c4e;
-      --green:     #00e879;
-      --dim:       #3a5a7a;
-      --text:      #c8dff0;
-      --text2:     #7aa8cc;
-      --text3:     #3a5a7a;
-      --mono:      'Share Tech Mono', monospace;
-      --title:     'Orbitron', sans-serif;
-      --body:      'Rajdhani', sans-serif;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--body);
-      font-size: 15px;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg, transparent, transparent 2px,
-        rgba(0,200,255,0.015) 2px, rgba(0,200,255,0.015) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    .shell {
-      display: grid;
-      grid-template-rows: 56px 1fr;
-      grid-template-columns: 220px 1fr;
-      height: 100vh;
-    }
-
-    /* ── TOPBAR ─────────────────────────────────────────────── */
-    .topbar {
-      grid-column: 1 / -1;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      gap: 24px;
-    }
-
-    .topbar-logo {
-      font-family: var(--title);
-      font-size: 14px;
-      font-weight: 900;
-      color: var(--accent);
-      letter-spacing: 3px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .topbar-subtitle {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--dim);
-      letter-spacing: 2px;
-    }
-
-    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
-
-    .clock { font-family: var(--mono); font-size: 12px; color: var(--accent2); }
-
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 8px var(--green);
-      animation: pulse-dot 2s infinite;
-    }
-
-    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-    /* ── SIDEBAR ─────────────────────────────────────────────── */
-    .sidebar {
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      padding: 16px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .nav-section {
-      padding: 8px 16px 4px;
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--text3);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 16px;
-      cursor: pointer; border: none; background: none;
-      color: var(--text2); font-family: var(--body);
-      font-size: 14px; font-weight: 500; letter-spacing: 0.5px;
-      text-align: left; width: 100%;
-      transition: all 0.15s;
-      border-left: 2px solid transparent;
-    }
-
-    .nav-item:hover { color: var(--accent); background: rgba(0,200,255,0.04); }
-    .nav-item.active { color: var(--accent); background: rgba(0,200,255,0.07); border-left-color: var(--accent); }
-    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-
-    .nav-badge {
-      margin-left: auto;
-      background: var(--accent2); color: var(--bg);
-      font-family: var(--mono); font-size: 10px;
-      padding: 1px 6px; border-radius: 2px;
-    }
-
-    /* ── MAIN ────────────────────────────────────────────────── */
-    .main { overflow-y: auto; padding: 24px; background: var(--bg); }
-
-    .page { display: none; animation: fadein 0.2s ease; }
-    .page.active { display: block; }
-    @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1} }
-
-    /* ── PAGE HEADER ─────────────────────────────────────────── */
-    .page-header {
-      display: flex; align-items: flex-end; gap: 16px;
-      margin-bottom: 24px; padding-bottom: 16px;
-      border-bottom: 1px solid var(--border2);
-    }
-
-    .page-title { font-family: var(--title); font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: 2px; }
-    .page-subtitle { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 2px; }
-    .page-header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-
-    /* ── STAT CARDS ─────────────────────────────────────────── */
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px; margin-bottom: 24px;
-    }
-
-    .stat-card {
-      background: var(--panel); border: 1px solid var(--border);
-      padding: 16px; position: relative; overflow: hidden;
-    }
-
-    .stat-card::before {
-      content: ''; position: absolute; top: 0; left: 0;
-      width: 100%; height: 2px; background: var(--accent); opacity: 0.5;
-    }
-
-    .stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-    .stat-value { font-family: var(--title); font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
-    .stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
-
-    /* ── TABLE ───────────────────────────────────────────────── */
-    .table-wrap { background: var(--panel); border: 1px solid var(--border); overflow: auto; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead { background: var(--bg3); border-bottom: 1px solid var(--border); }
-    th { padding: 10px 14px; text-align: left; font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
-    td { padding: 11px 14px; border-bottom: 1px solid var(--border2); color: var(--text); vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(0,200,255,0.03); }
-
-    .td-mono { font-family: var(--mono); font-size: 12px; }
-    .td-dim { color: var(--text2); }
-    .td-name { font-weight: 600; font-size: 14px; }
-
-    /* ── BADGES ──────────────────────────────────────────────── */
-    .badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 2px 8px; border-radius: 2px;
-      font-family: var(--mono); font-size: 10px;
-      letter-spacing: 1px; text-transform: uppercase; font-weight: 700; white-space: nowrap;
-    }
-
-    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
-
-    .badge-transit   { background:rgba(0,200,255,.12); color:var(--accent);  border:1px solid rgba(0,200,255,.3); }
-    .badge-transit .badge-dot { background:var(--accent); box-shadow:0 0 4px var(--accent); animation:pulse-dot 2s infinite; }
-    .badge-docked    { background:rgba(0,232,121,.10);  color:var(--green);  border:1px solid rgba(0,232,121,.3); }
-    .badge-docked .badge-dot { background:var(--green); }
-    .badge-emergency { background:rgba(255,60,78,.12);  color:var(--red);    border:1px solid rgba(255,60,78,.3); }
-    .badge-emergency .badge-dot { background:var(--red); box-shadow:0 0 6px var(--red); animation:pulse-dot .5s infinite; }
-    .badge-decommissioned { background:rgba(58,90,122,.2); color:var(--dim); border:1px solid var(--border); }
-    .badge-nominal   { background:rgba(0,232,121,.10);  color:var(--green);  border:1px solid rgba(0,232,121,.3); }
-    .badge-standby   { background:rgba(240,165,0,.10);  color:var(--gold);   border:1px solid rgba(240,165,0,.3); }
-    .badge-low       { background:rgba(0,200,255,.08);  color:var(--accent2);border:1px solid var(--border); }
-    .badge-moderate  { background:rgba(240,165,0,.10);  color:var(--gold);   border:1px solid rgba(240,165,0,.3); }
-    .badge-high      { background:rgba(255,100,0,.12);  color:#ff7030;       border:1px solid rgba(255,100,0,.3); }
-    .badge-extreme   { background:rgba(255,60,78,.12);  color:var(--red);    border:1px solid rgba(255,60,78,.3); }
-
-    /* ── PROGRESS ────────────────────────────────────────────── */
-    .progress-bar { height: 4px; background: var(--bg3); overflow: hidden; margin-top: 4px; }
-    .progress-fill { height: 100%; transition: width .4s ease; }
-    .progress-fill.blue  { background: var(--accent); }
-    .progress-fill.green { background: var(--green); }
-    .progress-fill.gold  { background: var(--gold); }
-    .progress-fill.red   { background: var(--red); }
-    .progress-label { font-family: var(--mono); font-size: 11px; color: var(--text2); }
-
-    /* ── BUTTONS ─────────────────────────────────────────────── */
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border: 1px solid var(--border);
-      background: var(--bg3); color: var(--text2);
-      font-family: var(--body); font-size: 13px; font-weight: 600;
-      letter-spacing: 0.5px; cursor: pointer; transition: all .15s;
-    }
-
-    .btn:hover { border-color: var(--accent2); color: var(--accent); background: rgba(0,200,255,.06); }
-    .btn-primary { background: var(--accent2); color: var(--bg); border-color: var(--accent); }
-    .btn-primary:hover { background: var(--accent); color: var(--bg); }
-    .btn-danger { border-color: rgba(255,60,78,.4); color: var(--red); }
-    .btn-danger:hover { background: rgba(255,60,78,.1); border-color: var(--red); }
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
-
-    /* ── PANEL ───────────────────────────────────────────────── */
-    .panel { background: var(--panel); border: 1px solid var(--border); margin-bottom: 16px; }
-    .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 10px; }
-    .panel-title { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--text2); text-transform: uppercase; }
-    .panel-body { padding: 16px; }
-
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-
-    /* ── DETAIL ROWS ─────────────────────────────────────────── */
-    .detail-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border2); }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-key { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; min-width: 140px; padding-top: 2px; }
-    .detail-val { font-size: 14px; color: var(--text); font-weight: 500; }
-
-    /* ── MODAL ───────────────────────────────────────────────── */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 1000; align-items: center; justify-content: center; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--panel); border: 1px solid var(--border); width: min(680px,95vw); max-height: 85vh; overflow-y: auto; }
-    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .modal-title { font-family: var(--title); font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: 2px; }
-    .modal-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; line-height: 1; padding: 0 4px; }
-    .modal-close:hover { color: var(--red); }
-    .modal-body { padding: 20px; }
-
-    /* ── FORMS ───────────────────────────────────────────────── */
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    .form-group { margin-bottom: 12px; }
-
-    label { display: block; font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
-
-    input, select, textarea {
-      width: 100%; background: var(--bg3); border: 1px solid var(--border);
-      color: var(--text); font-family: var(--body); font-size: 14px;
-      padding: 9px 12px; outline: none; transition: border-color .15s;
-    }
-
-    input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
-    select option { background: var(--bg2); }
-
-    /* ── MISC ────────────────────────────────────────────────── */
-    .crew-chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; background: var(--bg3); border: 1px solid var(--border); margin: 2px; font-size: 13px; }
-    .crew-chip-role { font-family: var(--mono); font-size: 10px; color: var(--text3); }
-
-    .cargo-tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; background: rgba(0,134,204,.12); border: 1px solid rgba(0,134,204,.3); font-family: var(--mono); font-size: 11px; color: var(--accent2); margin: 2px; }
-
-    .cargo-bar-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border2); }
-    .cargo-bar-label { min-width: 130px; font-family: var(--mono); font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
-    .cargo-bar-track { flex: 1; height: 6px; background: var(--bg3); }
-    .cargo-bar-fill { height: 100%; background: var(--accent2); }
-    .cargo-bar-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 80px; text-align: right; }
-
-    .critical-item { background: rgba(255,60,78,.05); border: 1px solid rgba(255,60,78,.2); padding: 14px; margin-bottom: 8px; }
-    .critical-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-    .critical-meta { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-
-    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-    /* Toast */
-    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--green); padding: 12px 20px; font-family: var(--mono); font-size: 12px; color: var(--green); z-index: 9000; opacity: 0; transform: translateY(10px); transition: all .3s; pointer-events: none; }
-    #toast.show { opacity: 1; transform: translateY(0); }
-    #toast.error { border-left-color: var(--red); color: var(--red); }
-
-    .loading { display: flex; align-items: center; gap: 10px; color: var(--text3); font-family: var(--mono); font-size: 12px; padding: 32px; justify-content: center; }
-    .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
-    @keyframes spin { to{transform:rotate(360deg)} }
-
-    .empty { text-align: center; padding: 40px; color: var(--text3); font-family: var(--mono); font-size: 12px; }
-
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg2); }
-    ::-webkit-scrollbar-thumb { background: var(--border); }
-
-    @media (max-width: 900px) {
-      .shell { grid-template-columns: 1fr; grid-template-rows: 56px auto 1fr; }
-      .sidebar { flex-direction: row; flex-wrap: wrap; gap: 0; border-right: none; border-bottom: 1px solid var(--border); padding: 8px; }
-      .nav-section { display: none; }
-      .grid-2, .grid-3, .analytics-grid, .form-row { grid-template-columns: 1fr; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interstellar Logistics Manager</title>
+    <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
+    <div class="container">
+        <h1>Interstellar Logistics Manager</h1>
 
-<div class="shell">
-
-  <header class="topbar">
-    <div class="topbar-logo">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="13" stroke="#00c8ff" stroke-width="1.5" opacity=".4"/>
-        <circle cx="14" cy="14" r="8" stroke="#00c8ff" stroke-width="1.5"/>
-        <path d="M14 2L16 10H12L14 2Z" fill="#00c8ff" opacity=".7"/>
-        <circle cx="14" cy="14" r="2.5" fill="#00c8ff"/>
-        <path d="M2 14H26M14 2V26" stroke="#00c8ff" stroke-width=".5" opacity=".3"/>
-      </svg>
-      ILM COMMAND
-    </div>
-    <span class="topbar-subtitle">INTERSTELLAR LOGISTICS MANAGER // v2.4.1</span>
-    <div class="topbar-right">
-      <div class="clock" id="clock">--:--:-- UTC</div>
-      <div class="status-dot"></div>
-    </div>
-  </header>
-
-  <nav class="sidebar">
-    <div class="nav-section">Operations</div>
-    <button class="nav-item active" onclick="nav('dashboard',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </button>
-    <button class="nav-item" onclick="nav('ships',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L8 8H16L12 2Z"/><rect x="7" y="8" width="10" height="10"/><path d="M9 18L7 22H17L15 18"/></svg>
-      Statki
-      <span class="nav-badge" id="badge-ships">—</span>
-    </button>
-    <button class="nav-item" onclick="nav('crew',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2"/><circle cx="19" cy="9" r="3"/><path d="M22 21v-1.5a5.5 5.5 0 0 0-5.5-5.5"/></svg>
-      Załoga
-      <span class="nav-badge" id="badge-crew">—</span>
-    </button>
-    <button class="nav-item" onclick="nav('routes',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12H17M7 12C10 12 12 9 17 7M7 12C10 12 12 15 17 17"/></svg>
-      Trasy
-    </button>
-    <div class="nav-section">Analityka</div>
-    <button class="nav-item" onclick="nav('analytics',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Agregacje
-    </button>
-  </nav>
-
-  <main class="main">
-
-    <!-- DASHBOARD -->
-    <div class="page active" id="page-dashboard">
-      <div class="page-header">
-        <div>
-          <div class="page-subtitle">OVERVIEW // FLEET STATUS</div>
-          <div class="page-title">DASHBOARD</div>
+        <div class="section">
+            <h2>Flota Statków</h2>
+            <ul id="ship-list">
+                <!-- Statki zostaną załadowane tutaj przez JavaScript -->
+                <li>Ładowanie statków...</li>
+            </ul>
         </div>
-        <div class="page-header-right">
-          <button class="btn btn-sm" onclick="loadDashboard()">↻ ODŚWIEŻ</button>
+
+        <div class="section">
+            <h2>Aktualizuj Status Statku</h2>
+            <form id="update-ship-status-form">
+                <div class="form-group">
+                    <label for="shipSelect">Wybierz statek:</label>
+                    <select id="shipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="newStatus">Nowy status:</label>
+                    <select id="newStatus">
+                        <option value="docked">Docked</option>
+                        <option value="in_transit">In Transit</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="decommissioned">Decommissioned</option>
+                    </select>
+                </div>
+                <button type="submit">Zaktualizuj Status</button>
+            </form>
         </div>
-      </div>
-      <div class="stat-grid" id="stat-grid"><div class="loading"><div class="spinner"></div> LOADING</div></div>
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">⚠ MISJE KRYTYCZNE</div></div>
-          <div class="panel-body" id="critical-panel"><div class="loading"><div class="spinner"></div></div></div>
+
+        <div class="section">
+            <h2>Przenieś Załoganta (Transakcja)</h2>
+            <p>Demonstracja transakcji wielodokumentowej: załogant zostanie usunięty z jednego statku i dodany do drugiego atomowo.</p>
+            <form id="transfer-crew-form">
+                <div class="form-group">
+                    <label for="crewIdInput">ID Załoganta:</label>
+                    <input type="text" id="crewIdInput" placeholder="np. 60d0fe4f53531b79e2c694a1">
+                </div>
+                <div class="form-group">
+                    <label for="sourceShipSelect">Z statku:</label>
+                    <select id="sourceShipSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="destShipSelect">Do statku:</label>
+                    <select id="destShipSelect"></select>
+                </div>
+                <button type="submit">Przenieś Załoganta</button>
+            </form>
+            <p id="transfer-message"></p>
         </div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">📦 ŁADUNEK WG TYPU</div></div>
-          <div class="panel-body" id="cargo-chart-panel"><div class="loading"><div class="spinner"></div></div></div>
-        </div>
-      </div>
-    </div>
 
-    <!-- SHIPS -->
-    <div class="page" id="page-ships">
-      <div class="page-header">
-        <div>
-          <div class="page-subtitle">FLEET MANAGEMENT // VESSELS</div>
-          <div class="page-title">STATKI</div>
-        </div>
-        <div class="page-header-right">
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-ship')">+ DODAJ STATEK</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <div id="ships-table-body"><div class="loading"><div class="spinner"></div> ŁADOWANIE</div></div>
-      </div>
-    </div>
-
-    <!-- CREW -->
-    <div class="page" id="page-crew">
-      <div class="page-header">
-        <div>
-          <div class="page-subtitle">PERSONNEL // CREW REGISTRY</div>
-          <div class="page-title">ZAŁOGA</div>
-        </div>
-        <div class="page-header-right">
-          <select id="crew-role-filter" onchange="loadCrew()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:5px 10px;font-size:12px;font-family:var(--body)">
-            <option value="">Wszystkie role</option>
-            <option>Captain</option>
-            <option>Chief Medical Officer</option>
-            <option>Medical Officer</option>
-            <option>Chief Engineer</option>
-            <option>Systems Engineer</option>
-            <option>Pilot</option>
-            <option>Science Officer</option>
-            <option>Mechanic</option>
-          </select>
-          <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-crew')">+ DODAJ CZŁONKA</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <div id="crew-table-body"><div class="loading"><div class="spinner"></div> ŁADOWANIE</div></div>
-      </div>
-    </div>
-
-    <!-- ROUTES -->
-    <div class="page" id="page-routes">
-      <div class="page-header">
-        <div>
-          <div class="page-subtitle">NAVIGATION // ROUTES</div>
-          <div class="page-title">TRASY</div>
-        </div>
-      </div>
-      <div id="routes-body"><div class="loading"><div class="spinner"></div> ŁADOWANIE</div></div>
-    </div>
-
-    <!-- ANALYTICS -->
-    <div class="page" id="page-analytics">
-      <div class="page-header">
-        <div>
-          <div class="page-subtitle">MONGODB AGGREGATION PIPELINE // ANALYTICS</div>
-          <div class="page-title">AGREGACJE</div>
-        </div>
-        <div class="page-header-right">
-          <button class="btn btn-sm" onclick="loadAnalytics()">↻ PRZELICZ</button>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-bottom:16px">
-        <div class="panel-header"><div class="panel-title">🔬 MISJE KRYTYCZNE — $lookup + $filter + $match</div></div>
-        <div class="panel-body">
-          <p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:12px">
-            Statki IN TRANSIT z lekarzem w załodze ORAZ &lt;20% zapasów żywności.<br>
-            Używa: $lookup (crew), $lookup (route), $addFields, $filter (embedded array), $match
-          </p>
-          <div id="analytics-critical"><div class="loading"><div class="spinner"></div></div></div>
-        </div>
-      </div>
-
-      <div class="analytics-grid">
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">📊 ŁADUNEK WG TYPU — $unwind + $group</div></div>
-          <div class="panel-body">
-            <p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:12px">
-              Agregacja wszystkich ładunków. Używa: $unwind (embedded array), $group, $sum, $sort
-            </p>
-            <div id="analytics-cargo"><div class="loading"><div class="spinner"></div></div></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">🚀 PODSUMOWANIE FLOTY — $group</div></div>
-          <div class="panel-body" id="analytics-fleet"><div class="loading"><div class="spinner"></div></div></div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-</div>
-
-<!-- MODALS -->
-
-<div class="modal-overlay" id="modal-ship-detail">
-  <div class="modal" style="width:min(820px,95vw)">
-    <div class="modal-header">
-      <div class="modal-title" id="ship-detail-title">SHIP DETAIL</div>
-      <button class="modal-close" onclick="closeModal('modal-ship-detail')">✕</button>
-    </div>
-    <div class="modal-body" id="ship-detail-body"><div class="loading"><div class="spinner"></div></div></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-crew-detail">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="crew-detail-title">CREW MEMBER</div>
-      <button class="modal-close" onclick="closeModal('modal-crew-detail')">✕</button>
-    </div>
-    <div class="modal-body" id="crew-detail-body"><div class="loading"><div class="spinner"></div></div></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-add-ship">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">REJESTRACJA STATKU</div>
-      <button class="modal-close" onclick="closeModal('modal-add-ship')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label>Nazwa statku</label><input id="new-ship-name" placeholder="IMSV ..."></div>
-        <div class="form-group"><label>Rejestr</label><input id="new-ship-reg" placeholder="IM-0000-X"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Klasa</label>
-          <select id="new-ship-class">
-            <option>Heavy Freighter</option><option>Scout Vessel</option>
-            <option>Passenger Freighter</option><option>Dreadnought Freighter</option><option>Tanker</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Trasa</label><select id="new-ship-route"></select></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Data odlotu</label><input type="date" id="new-ship-dep"></div>
-        <div class="form-group"><label>ETA</label><input type="date" id="new-ship-eta"></div>
-      </div>
-      <button class="btn btn-primary" onclick="addShip()" style="width:100%;margin-top:8px">ZAREJESTRUJ STATEK</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-add-crew">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">NOWY CZŁONEK ZAŁOGI</div>
-      <button class="modal-close" onclick="closeModal('modal-add-crew')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label>Imię i nazwisko</label><input id="new-crew-name" placeholder="Jan Kowalski"></div>
-        <div class="form-group"><label>Rola</label>
-          <select id="new-crew-role">
-            <option>Captain</option><option>Chief Medical Officer</option><option>Medical Officer</option>
-            <option>Chief Engineer</option><option>Systems Engineer</option><option>Pilot</option>
-            <option>Science Officer</option><option>Mechanic</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Stopień</label><input id="new-crew-rank" placeholder="Lieutenant"></div>
-        <div class="form-group"><label>Doświadczenie (lata)</label><input type="number" id="new-crew-exp" value="1" min="0"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Grupa krwi</label>
-          <select id="new-crew-blood">
-            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Zdolny do służby</label>
-          <select id="new-crew-fit"><option value="true">TAK</option><option value="false">NIE</option></select>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="addCrew()" style="width:100%;margin-top:8px">ZAREJESTRUJ CZŁONKA ZAŁOGI</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-add-cargo">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">DODAJ ŁADUNEK</div>
-      <button class="modal-close" onclick="closeModal('modal-add-cargo')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="cargo-ship-id">
-      <div class="form-row">
-        <div class="form-group"><label>Typ ładunku</label>
-          <select id="new-cargo-type">
-            <option value="oxygen">Tlen (oxygen)</option>
-            <option value="food">Żywność (food)</option>
-            <option value="fuel">Paliwo (fuel)</option>
-            <option value="spare_parts">Części zamienne</option>
-            <option value="medical_supplies">Materiały medyczne</option>
-            <option value="scientific_equipment">Sprzęt naukowy</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Opis</label><input id="new-cargo-desc" placeholder="Szczegółowy opis..."></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Ilość (kg)</label><input type="number" id="new-cargo-qty" value="1000" min="1"></div>
-        <div class="form-group"><label>Maks. pojemność (kg)</label><input type="number" id="new-cargo-cap" value="5000" min="1"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Niebezpieczny</label>
-          <select id="new-cargo-hazard"><option value="false">NIE</option><option value="true">TAK</option></select>
-        </div>
-        <div class="form-group"><label>Przeznaczenie</label><input id="new-cargo-dest" placeholder="Baza docelowa..."></div>
-      </div>
-      <button class="btn btn-primary" onclick="addCargo()" style="width:100%;margin-top:8px">ZAŁADUJ</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-assign-crew">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">PRZYDZIEL ZAŁOGĘ</div>
-      <button class="modal-close" onclick="closeModal('modal-assign-crew')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="assign-ship-id">
-      <div class="form-group">
-        <label>Wybierz członka załogi</label>
-        <select id="assign-crew-select" style="margin-bottom:12px"></select>
-      </div>
-      <button class="btn btn-primary" onclick="assignCrew()" style="width:100%">PRZYDZIEL DO STATKU</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-const API = '';   // Flask serwuje frontend i API na tym samym porcie
-
-// ── Nawigacja ─────────────────────────────────────────────────
-function nav(page, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  el.classList.add('active');
-  const loaders = { dashboard: loadDashboard, ships: loadShips, crew: loadCrew, routes: loadRoutes, analytics: loadAnalytics };
-  loaders[page]?.();
-}
-
-// ── Zegar ─────────────────────────────────────────────────────
-setInterval(() => {
-  document.getElementById('clock').textContent = new Date().toUTCString().slice(17, 25) + ' UTC';
-}, 1000);
-
-// ── Modale ────────────────────────────────────────────────────
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
-
-// ── Toast ─────────────────────────────────────────────────────
-function toast(msg, error = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show' + (error ? ' error' : '');
-  setTimeout(() => t.className = '', 3000);
-}
-
-// ── Fetch helper ──────────────────────────────────────────────
-async function api(path, opts = {}) {
-  const r = await fetch('/api' + path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-
-// ── Helpers renderowania ──────────────────────────────────────
-function statusBadge(s) {
-  const m = { in_transit: ['badge-transit','IN TRANSIT'], docked: ['badge-docked','ZACUMOWANY'], emergency: ['badge-emergency','AWARYJNY'], decommissioned: ['badge-decommissioned','WYCOFANY'] };
-  const [cls, lbl] = m[s] || ['badge-decommissioned', s];
-  return `<span class="badge ${cls}"><span class="badge-dot"></span>${lbl}</span>`;
-}
-
-function hazardLevelBadge(l) {
-  const m = { low:'badge-low', moderate:'badge-moderate', high:'badge-high', extreme:'badge-extreme' };
-  return l ? `<span class="badge ${m[l]||''}">${l.toUpperCase()}</span>` : '';
-}
-
-function lifeBadge(s) {
-  const m = { nominal:'badge-nominal', standby:'badge-standby' };
-  return `<span class="badge ${m[s]||'badge-decommissioned'}">${(s||'—').toUpperCase()}</span>`;
-}
-
-function bar(val, color = 'blue') {
-  const pct = Math.max(0, Math.min(100, val || 0));
-  const c = pct < 25 ? 'red' : pct < 50 ? 'gold' : color;
-  return `<div class="progress-label">${pct}%</div><div class="progress-bar"><div class="progress-fill ${c}" style="width:${pct}%"></div></div>`;
-}
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('pl-PL', { day:'2-digit', month:'short', year:'numeric' });
-}
-
-// ════════════════════════════════════════════════════════════
-// DASHBOARD
-// ════════════════════════════════════════════════════════════
-async function loadDashboard() {
-  try {
-    const [summary, critical, cargo] = await Promise.all([
-      api('/analytics/fleet-summary'),
-      api('/analytics/critical-missions'),
-      api('/analytics/cargo-breakdown'),
-    ]);
-
-    document.getElementById('stat-grid').innerHTML = `
-      <div class="stat-card"><div class="stat-label">Wszystkie statki</div><div class="stat-value" style="color:var(--text)">${summary.total_ships||0}</div></div>
-      <div class="stat-card"><div class="stat-label">W locie</div><div class="stat-value">${summary.in_transit||0}</div><div class="stat-sub">in_transit</div></div>
-      <div class="stat-card"><div class="stat-label">Zacumowane</div><div class="stat-value" style="color:var(--green)">${summary.docked||0}</div></div>
-      <div class="stat-card"><div class="stat-label">Śr. kadłub</div><div class="stat-value" style="color:${(summary.avg_hull||0)<70?'var(--red)':'var(--gold)'}">${Math.round(summary.avg_hull||0)}%</div></div>
-      <div class="stat-card"><div class="stat-label">Śr. paliwo</div><div class="stat-value" style="color:${(summary.avg_fuel||0)<30?'var(--red)':'var(--accent)'}">${Math.round(summary.avg_fuel||0)}%</div></div>
-      <div class="stat-card"><div class="stat-label">Poz. ładunków</div><div class="stat-value" style="color:var(--text2)">${summary.total_cargo_types||0}</div></div>
-    `;
-
-    const cp = document.getElementById('critical-panel');
-    cp.innerHTML = !critical.length
-      ? '<div class="empty">Brak krytycznych misji ✓</div>'
-      : critical.map(s => `
-          <div class="critical-item">
-            <div class="critical-name">${s.name} <span style="font-size:12px;font-weight:400;color:var(--text3)">${s.registry}</span></div>
-            <div class="critical-meta" style="margin:4px 0">${s.route?.name||'—'} | ETA: ${fmtDate(s.eta)} | ${hazardLevelBadge(s.route?.hazard_level)}</div>
-            <div class="critical-meta"><span style="color:var(--red)">🍕 Żywność: ${s.food_percent}%</span> | Załoga: ${s.crew_count} | Paliwo: ${s.systems?.fuel_remaining_percent}%</div>
-          </div>`).join('');
-
-    const max = Math.max(...cargo.map(c => c.total_kg), 1);
-    document.getElementById('cargo-chart-panel').innerHTML = cargo.map(c => `
-      <div class="cargo-bar-row">
-        <div class="cargo-bar-label">${c._id}</div>
-        <div class="cargo-bar-track"><div class="cargo-bar-fill" style="width:${(c.total_kg/max*100).toFixed(1)}%"></div></div>
-        <div class="cargo-bar-val">${c.total_kg.toLocaleString('pl')} kg</div>
-      </div>`).join('');
-
-  } catch(e) { toast('Błąd dashboard: ' + e.message, true); }
-}
-
-// ════════════════════════════════════════════════════════════
-// SHIPS
-// ════════════════════════════════════════════════════════════
-async function loadShips() {
-  document.getElementById('ships-table-body').innerHTML = '<div class="loading"><div class="spinner"></div> ŁADOWANIE</div>';
-  try {
-    const ships = await api('/ships');
-    document.getElementById('badge-ships').textContent = ships.length;
-    if (!ships.length) { document.getElementById('ships-table-body').innerHTML = '<div class="empty">Brak statków.</div>'; return; }
-
-    document.getElementById('ships-table-body').innerHTML = `
-      <table>
-        <thead><tr>
-          <th>Nazwa / Rejestr</th><th>Klasa</th><th>Status</th><th>Trasa</th>
-          <th>ETA</th><th>Kadłub</th><th>Paliwo</th><th>Załoga</th><th>Ładunki</th><th></th>
-        </tr></thead>
-        <tbody>
-          ${ships.map(s => `
-            <tr>
-              <td><div class="td-name">${s.name}</div><div class="td-mono td-dim">${s.registry}</div></td>
-              <td class="td-dim">${s.class}</td>
-              <td>${statusBadge(s.status)}</td>
-              <td><div style="font-size:13px">${s.route?.name||'—'}</div>${hazardLevelBadge(s.route?.hazard_level)}</td>
-              <td class="td-mono td-dim" style="font-size:12px">${fmtDate(s.eta)}</td>
-              <td style="min-width:100px">${bar(s.systems?.hull_integrity_percent,'green')}</td>
-              <td style="min-width:100px">${bar(s.systems?.fuel_remaining_percent)}</td>
-              <td class="td-mono" style="text-align:center">${s.crew_count}</td>
-              <td class="td-mono" style="text-align:center">${s.cargo_count}</td>
-              <td><button class="btn btn-sm" onclick="openShipDetail('${s._id}')">PODGLĄD</button></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
-  } catch(e) { toast('Błąd: ' + e.message, true); }
-}
-
-async function openShipDetail(id) {
-  openModal('modal-ship-detail');
-  document.getElementById('ship-detail-body').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    const s = await api('/ships/' + id);
-    document.getElementById('ship-detail-title').textContent = s.name + ' — ' + s.registry;
-    document.getElementById('ship-detail-body').innerHTML = `
-      <div class="grid-2" style="margin-bottom:16px">
-        <div>
-          <div class="panel-title" style="margin-bottom:10px">SYSTEMY POKŁADOWE</div>
-          <div class="detail-row"><div class="detail-key">Status</div><div class="detail-val">${statusBadge(s.status)}</div></div>
-          <div class="detail-row"><div class="detail-key">Podtrzymanie życia</div><div class="detail-val">${lifeBadge(s.systems?.life_support_status)}</div></div>
-          <div class="detail-row"><div class="detail-key">Reaktor</div><div class="detail-val">${bar(s.systems?.reactor_output_percent)}</div></div>
-          <div class="detail-row"><div class="detail-key">Kadłub</div><div class="detail-val">${bar(s.systems?.hull_integrity_percent,'green')}</div></div>
-          <div class="detail-row"><div class="detail-key">Paliwo</div><div class="detail-val">${bar(s.systems?.fuel_remaining_percent)}</div></div>
-          <div style="margin-top:12px">
-            <div class="panel-title" style="margin-bottom:8px">ZMIEŃ STATUS</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${['docked','in_transit','emergency','decommissioned'].map(st =>
-                `<button class="btn btn-sm ${st==='emergency'?'btn-danger':''}" onclick="updateStatus('${id}','${st}')">${st.replace('_',' ').toUpperCase()}</button>`
-              ).join('')}
+        <div class="section">
+            <h2>Aktualizacje w Czasie Rzeczywistym (Change Stream)</h2>
+            <p>Ta sekcja na bieżąco wyświetla zmiany w kolekcji statków.</p>
+            <div id="realtime-updates" class="realtime-updates">
+                <p>Łączenie z Change Stream. Upewnij się, że MongoDB działa jako replikaset...</p>
             </div>
-          </div>
         </div>
-        <div>
-          <div class="panel-title" style="margin-bottom:10px">NAWIGACJA</div>
-          <div class="detail-row"><div class="detail-key">Trasa</div><div class="detail-val">${s.route?.name||'—'}</div></div>
-          <div class="detail-row"><div class="detail-key">Zagrożenie</div><div class="detail-val">${hazardLevelBadge(s.route?.hazard_level)||'—'}</div></div>
-          <div class="detail-row"><div class="detail-key">Odlot</div><div class="detail-val">${fmtDate(s.departure_date)}</div></div>
-          <div class="detail-row"><div class="detail-key">ETA</div><div class="detail-val">${fmtDate(s.eta)}</div></div>
-          <div class="detail-row">
-            <div class="detail-key">Pozycja (AU)</div>
-            <div class="detail-val td-mono" style="font-size:12px">X:${s.current_position?.x_au?.toFixed(2)} Y:${s.current_position?.y_au?.toFixed(2)} Z:${s.current_position?.z_au?.toFixed(2)}</div>
-          </div>
-        </div>
-      </div>
+    </div>
 
-      <div style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div class="panel-title">MANIFEST ŁADUNKOWY (${s.cargo?.length||0} poz.)</div>
-          <button class="btn btn-sm btn-primary" onclick="openAddCargo('${id}')">+ DODAJ</button>
-        </div>
-        ${!s.cargo?.length ? '<div class="empty" style="padding:16px">Brak ładunku.</div>' :
-          `<div class="table-wrap"><table>
-            <thead><tr><th>ID</th><th>Typ</th><th>Opis</th><th>Ilość / Maks</th><th>Wypełnienie</th><th>Przeznaczenie</th><th></th></tr></thead>
-            <tbody>
-              ${s.cargo.map(c => `
-                <tr>
-                  <td class="td-mono" style="font-size:11px">${c.item_id}</td>
-                  <td>${c.type}${c.hazardous?' <span style="color:var(--red)">⚠</span>':''}</td>
-                  <td>${c.description}</td>
-                  <td class="td-mono" style="font-size:12px">${c.quantity_kg?.toLocaleString('pl')} / ${c.max_capacity_kg?.toLocaleString('pl')} kg</td>
-                  <td style="min-width:100px">${bar(c.quantity_kg/c.max_capacity_kg*100)}</td>
-                  <td class="td-dim">${c.destination||'—'}</td>
-                  <td><button class="btn btn-sm btn-danger" onclick="removeCargo('${id}','${c.item_id}')">✕</button></td>
-                </tr>`).join('')}
-            </tbody>
-          </table></div>`}
-      </div>
+    <script>
+        const shipList = document.getElementById('ship-list');
+        const shipSelect = document.getElementById('shipSelect');
+        const updateShipStatusForm = document.getElementById('update-ship-status-form');
+        const newStatusSelect = document.getElementById('newStatus');
 
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div class="panel-title">MANIFEST ZAŁOGI (${s.crew?.length||0} os.)</div>
-          <button class="btn btn-sm btn-primary" onclick="openAssignCrew('${id}')">+ PRZYDZIEL</button>
-        </div>
-        ${!s.crew?.length ? '<div class="empty" style="padding:16px">Brak załogi.</div>' :
-          `<div style="display:flex;flex-wrap:wrap;gap:6px">
-            ${s.crew.map(c => `
-              <div class="crew-chip">
-                <div><div>${c.name}</div><div class="crew-chip-role">${c.role} · ${c.rank}</div></div>
-                <span style="color:${c.medical?.fit_for_duty?'var(--green)':'var(--red)'};font-size:16px">${c.medical?.fit_for_duty?'✓':'✗'}</span>
-                <button class="btn btn-sm btn-danger" style="padding:3px 6px" onclick="removeCrew('${id}','${c._id}')">✕</button>
-              </div>`).join('')}
-          </div>`}
-      </div>`;
-  } catch(e) { toast(e.message, true); }
-}
+        const transferCrewForm = document.getElementById('transfer-crew-form');
+        const crewIdInput = document.getElementById('crewIdInput');
+        const sourceShipSelect = document.getElementById('sourceShipSelect');
+        const destShipSelect = document.getElementById('destShipSelect');
+        const transferMessage = document.getElementById('transfer-message');
 
-async function updateStatus(shipId, status) {
-  try {
-    await api('/ships/' + shipId + '/status', { method: 'PATCH', body: { status } });
-    toast('Status: ' + status);
-    openShipDetail(shipId);
-    loadShips();
-  } catch(e) { toast(e.message, true); }
-}
+        const realtimeUpdatesDiv = document.getElementById('realtime-updates');
 
-function openAddCargo(shipId) {
-  document.getElementById('cargo-ship-id').value = shipId;
-  closeModal('modal-ship-detail');
-  openModal('modal-add-cargo');
-}
+        let allShips = []; // Do przechowywania wszystkich statków dla list rozwijanych
 
-async function addCargo() {
-  const shipId = document.getElementById('cargo-ship-id').value;
-  const body = {
-    type:            document.getElementById('new-cargo-type').value,
-    description:     document.getElementById('new-cargo-desc').value,
-    quantity_kg:     parseInt(document.getElementById('new-cargo-qty').value),
-    max_capacity_kg: parseInt(document.getElementById('new-cargo-cap').value),
-    hazardous:       document.getElementById('new-cargo-hazard').value === 'true',
-    destination:     document.getElementById('new-cargo-dest').value,
-  };
-  try {
-    await api('/ships/' + shipId + '/cargo', { method: 'POST', body });
-    toast('Ładunek dodany!');
-    closeModal('modal-add-cargo');
-    openShipDetail(shipId);
-    loadShips();
-  } catch(e) { toast(e.message, true); }
-}
+        // Funkcja do pobierania i wyświetlania statków
+        async function fetchShips() {
+            try {
+                const response = await fetch('/api/ships');
+                const ships = await response.json();
+                allShips = ships; // Przechowaj statki dla list rozwijanych
 
-async function removeCargo(shipId, itemId) {
-  if (!confirm('Usunąć ładunek?')) return;
-  try {
-    await api('/ships/' + shipId + '/cargo/' + itemId, { method: 'DELETE' });
-    toast('Ładunek usunięty.');
-    openShipDetail(shipId);
-    loadShips();
-  } catch(e) { toast(e.message, true); }
-}
+                // Wyczyść i wypełnij listy
+                shipList.innerHTML = '';
+                shipSelect.innerHTML = '';
+                sourceShipSelect.innerHTML = '';
+                destShipSelect.innerHTML = '';
 
-async function openAssignCrew(shipId) {
-  document.getElementById('assign-ship-id').value = shipId;
-  const crew = await api('/crew');
-  document.getElementById('assign-crew-select').innerHTML =
-    crew.map(c => `<option value="${c._id}">${c.name} — ${c.role}</option>`).join('');
-  closeModal('modal-ship-detail');
-  openModal('modal-assign-crew');
-}
+                if (ships.length === 0) {
+                    shipList.innerHTML = '<li>Brak statków w bazie danych.</li>';
+                    return;
+                }
 
-async function assignCrew() {
-  const shipId = document.getElementById('assign-ship-id').value;
-  const crewId = document.getElementById('assign-crew-select').value;
-  try {
-    await api('/ships/' + shipId + '/crew', { method: 'POST', body: { crew_id: crewId } });
-    toast('Załogant przydzielony!');
-    closeModal('modal-assign-crew');
-    openShipDetail(shipId);
-  } catch(e) { toast(e.message, true); }
-}
+                ships.forEach(ship => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <strong>${ship.name}</strong> (${ship.registry}) <br>
+                        <span>Status: ${ship.status} | Trasa: ${ship.route?.name || 'Brak'} (Hazard: ${ship.route?.hazard_level || 'N/A'}) | Załoga: ${ship.crew_count} | Ładunek: ${ship.cargo_count}</span>
+                    `;
+                    shipList.appendChild(listItem);
 
-async function removeCrew(shipId, crewId) {
-  if (!confirm('Odwołać załoganta?')) return;
-  try {
-    await api('/ships/' + shipId + '/crew/' + crewId, { method: 'DELETE' });
-    toast('Odwołano.');
-    openShipDetail(shipId);
-  } catch(e) { toast(e.message, true); }
-}
+                    // Wypełnij listy rozwijane do aktualizacji statusu
+                    const option = document.createElement('option');
+                    option.value = ship._id;
+                    option.textContent = `${ship.name} (${ship.registry})`;
+                    shipSelect.appendChild(option);
 
-async function addShip() {
-  const body = {
-    name:           document.getElementById('new-ship-name').value,
-    registry:       document.getElementById('new-ship-reg').value,
-    class:          document.getElementById('new-ship-class').value,
-    route_id:       document.getElementById('new-ship-route').value,
-    departure_date: document.getElementById('new-ship-dep').value,
-    eta:            document.getElementById('new-ship-eta').value,
-  };
-  if (!body.name || !body.registry) { toast('Nazwa i rejestr wymagane!', true); return; }
-  try {
-    await api('/ships', { method: 'POST', body });
-    toast('Statek zarejestrowany!');
-    closeModal('modal-add-ship');
-    loadShips();
-  } catch(e) { toast(e.message, true); }
-}
+                    // Wypełnij listy rozwijane do przenoszenia załogi
+                    const sourceOption = option.cloneNode(true);
+                    sourceShipSelect.appendChild(sourceOption);
+                    const destOption = option.cloneNode(true);
+                    destShipSelect.appendChild(destOption);
+                });
+            } catch (error) {
+                console.error('Błąd podczas pobierania statków:', error);
+                shipList.innerHTML = '<li>Błąd podczas ładowania statków.</li>';
+            }
+        }
 
-// ════════════════════════════════════════════════════════════
-// CREW
-// ════════════════════════════════════════════════════════════
-async function loadCrew() {
-  document.getElementById('crew-table-body').innerHTML = '<div class="loading"><div class="spinner"></div> ŁADOWANIE</div>';
-  try {
-    const role = document.getElementById('crew-role-filter').value;
-    const crew = await api('/crew' + (role ? '?role=' + encodeURIComponent(role) : ''));
-    document.getElementById('badge-crew').textContent = crew.length;
+        // Obsługa formularza aktualizacji statusu statku
+        updateShipStatusForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shipId = shipSelect.value;
+            const newStatus = newStatusSelect.value;
 
-    if (!crew.length) { document.getElementById('crew-table-body').innerHTML = '<div class="empty">Brak wyników.</div>'; return; }
+            if (!shipId) {
+                alert("Wybierz statek do aktualizacji.");
+                return;
+            }
 
-    document.getElementById('crew-table-body').innerHTML = `
-      <table>
-        <thead><tr>
-          <th>Imię i nazwisko</th><th>Rola</th><th>Stopień</th><th>Certyfikaty</th>
-          <th>Dośw.</th><th>Gr. krwi</th><th>Przegląd</th><th>Gotowość</th><th></th>
-        </tr></thead>
-        <tbody>
-          ${crew.map(c => `
-            <tr>
-              <td class="td-name">${c.name}</td>
-              <td>${c.role}</td>
-              <td class="td-dim">${c.rank}</td>
-              <td style="max-width:200px">${(c.certifications||[]).map(cert=>`<span class="cargo-tag" style="font-size:9px;padding:2px 6px">${cert}</span>`).join('')}</td>
-              <td class="td-mono" style="text-align:center">${c.experience_years} lat</td>
-              <td class="td-mono" style="text-align:center">${c.medical?.blood_type||'—'}</td>
-              <td class="td-mono td-dim" style="font-size:12px">${fmtDate(c.medical?.last_checkup)}</td>
-              <td><span class="badge ${c.medical?.fit_for_duty?'badge-docked':'badge-emergency'}">${c.medical?.fit_for_duty?'GOTOWY':'NIEZDOLNY'}</span></td>
-              <td><button class="btn btn-sm" onclick="openCrewDetail('${c._id}')">PODGLĄD</button></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
-  } catch(e) { toast('Błąd: ' + e.message, true); }
-}
+            try {
+                const response = await fetch(`/api/ships/${shipId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert(`Status statku ${shipSelect.options[shipSelect.selectedIndex].text} zaktualizowany na: ${newStatus}`);
+                    fetchShips(); // Odśwież listę statków
+                } else {
+                    alert(`Błąd: ${result.error || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Błąd podczas aktualizacji statusu:', error);
+                alert('Wystąpił błąd podczas aktualizacji statusu.');
+            }
+        });
 
-async function openCrewDetail(id) {
-  openModal('modal-crew-detail');
-  document.getElementById('crew-detail-body').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    const c = await api('/crew/' + id);
-    document.getElementById('crew-detail-title').textContent = c.name + ' — ' + c.role;
-    document.getElementById('crew-detail-body').innerHTML = `
-      <div class="detail-row"><div class="detail-key">Stopień</div><div class="detail-val">${c.rank}</div></div>
-      <div class="detail-row"><div class="detail-key">Doświadczenie</div><div class="detail-val">${c.experience_years} lat</div></div>
-      <div class="detail-row"><div class="detail-key">Certyfikaty</div><div class="detail-val">${(c.certifications||[]).map(cert=>`<span class="cargo-tag">${cert}</span>`).join(' ')}</div></div>
-      <div class="detail-row"><div class="detail-key">Grupa krwi</div><div class="detail-val td-mono">${c.medical?.blood_type}</div></div>
-      <div class="detail-row"><div class="detail-key">Ostatni przegląd</div><div class="detail-val">${fmtDate(c.medical?.last_checkup)}</div></div>
-      <div class="detail-row">
-        <div class="detail-key">Zdolność do służby</div>
-        <div class="detail-val"><span class="badge ${c.medical?.fit_for_duty?'badge-docked':'badge-emergency'}">${c.medical?.fit_for_duty?'GOTOWY DO SŁUŻBY':'NIEZDOLNY'}</span></div>
-      </div>
-      <div style="margin-top:16px">
-        <div class="panel-title" style="margin-bottom:8px">ZMIEŃ STATUS MEDYCZNY</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-sm" onclick="updateMedical('${id}',true)">✓ ZATWIERDŹ GOTOWOŚĆ</button>
-          <button class="btn btn-sm btn-danger" onclick="updateMedical('${id}',false)">✗ ZAWIEŚ SŁUŻBĘ</button>
-        </div>
-      </div>
-      <div style="margin-top:16px">
-        <div class="panel-title" style="margin-bottom:8px">PRZYDZIELONY DO (${c.assignments?.length||0})</div>
-        ${!c.assignments?.length
-          ? '<div class="empty" style="padding:12px">Brak przydziałów</div>'
-          : c.assignments.map(a=>`
-              <div class="detail-row">
-                <div class="detail-key">${a.registry}</div>
-                <div class="detail-val">${a.name} — ${statusBadge(a.status)}</div>
-              </div>`).join('')}
-      </div>`;
-  } catch(e) { toast(e.message, true); }
-}
+        // Obsługa formularza przenoszenia załoganta (transakcja)
+        transferCrewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const crew_id = crewIdInput.value.trim();
+            const source_ship_id = sourceShipSelect.value;
+            const destination_ship_id = destShipSelect.value;
 
-async function updateMedical(id, fit) {
-  try {
-    await api('/crew/' + id + '/medical', { method: 'PATCH', body: { fit_for_duty: fit } });
-    toast('Status medyczny zaktualizowany');
-    openCrewDetail(id);
-    loadCrew();
-  } catch(e) { toast(e.message, true); }
-}
+            transferMessage.textContent = ''; // Wyczyść poprzednie komunikaty
 
-async function addCrew() {
-  const body = {
-    name:             document.getElementById('new-crew-name').value,
-    role:             document.getElementById('new-crew-role').value,
-    rank:             document.getElementById('new-crew-rank').value,
-    experience_years: parseInt(document.getElementById('new-crew-exp').value),
-    medical: {
-      blood_type:   document.getElementById('new-crew-blood').value,
-      fit_for_duty: document.getElementById('new-crew-fit').value === 'true',
-    },
-  };
-  if (!body.name) { toast('Imię wymagane!', true); return; }
-  try {
-    await api('/crew', { method: 'POST', body });
-    toast('Załogant zarejestrowany!');
-    closeModal('modal-add-crew');
-    loadCrew();
-  } catch(e) { toast(e.message, true); }
-}
+            if (!crew_id || !source_ship_id || !destination_ship_id) {
+                transferMessage.textContent = "Wypełnij wszystkie pola!";
+                transferMessage.style.color = 'red';
+                return;
+            }
 
-// ════════════════════════════════════════════════════════════
-// ROUTES
-// ════════════════════════════════════════════════════════════
-async function loadRoutes() {
-  try {
-    const routes = await api('/routes');
-    document.getElementById('routes-body').innerHTML = `
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Nazwa</th><th>Skąd</th><th>Dokąd</th><th>Dystans</th><th>Śr. czas</th><th>Zagrożenie</th></tr></thead>
-          <tbody>
-            ${routes.map(r => `
-              <tr>
-                <td class="td-name">${r.name}</td>
-                <td class="td-dim">${r.origin}</td>
-                <td class="td-dim">${r.destination}</td>
-                <td class="td-mono">${(r.distance_km/1e6).toFixed(1)}M km</td>
-                <td class="td-mono">${r.avg_duration_days} dni</td>
-                <td>${hazardLevelBadge(r.hazard_level)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-  } catch(e) { toast('Błąd: ' + e.message, true); }
-}
+            if (source_ship_id === destination_ship_id) {
+                transferMessage.textContent = "Statek źródłowy i docelowy muszą być różne!";
+                transferMessage.style.color = 'orange';
+                return;
+            }
 
-// ════════════════════════════════════════════════════════════
-// ANALYTICS
-// ════════════════════════════════════════════════════════════
-async function loadAnalytics() {
-  try {
-    const [critical, cargo, summary] = await Promise.all([
-      api('/analytics/critical-missions'),
-      api('/analytics/cargo-breakdown'),
-      api('/analytics/fleet-summary'),
-    ]);
+            // Opcjonalne sprawdzenie po stronie klienta, czy załogant jest na statku źródłowym
+            // Backend i tak to zabezpieczy, ale to poprawia UX.
+            const sourceShip = allShips.find(s => s._id === source_ship_id);
+            if (sourceShip && !sourceShip.crew_ids.includes(crew_id)) {
+                 transferMessage.textContent = `Załogant o ID ${crew_id} nie został znaleziony na statku źródłowym. Transakcja może być nieskuteczna.`;
+                 transferMessage.style.color = 'orange';
+                 // Kontynuujemy, bo backend i tak to obsłuży atomowo, ale dajemy ostrzeżenie.
+            }
 
-    const ac = document.getElementById('analytics-critical');
-    ac.innerHTML = !critical.length
-      ? '<div class="empty">Brak statków spełniających kryteria</div>'
-      : `<div class="table-wrap"><table>
-          <thead><tr><th>Statek</th><th>Trasa</th><th>ETA</th><th>Zagrożenie</th><th>Żywność %</th><th>Paliwo %</th><th>Załoga</th></tr></thead>
-          <tbody>
-            ${critical.map(s => `
-              <tr>
-                <td class="td-name">${s.name}</td>
-                <td>${s.route?.name||'—'}</td>
-                <td class="td-mono">${fmtDate(s.eta)}</td>
-                <td>${hazardLevelBadge(s.route?.hazard_level)}</td>
-                <td style="color:var(--red);font-family:var(--mono)">${s.food_percent}%</td>
-                <td class="td-mono">${s.systems?.fuel_remaining_percent}%</td>
-                <td class="td-mono" style="text-align:center">${s.crew_count}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table></div>`;
+            try {
+                const response = await fetch('/api/transactions/transfer-crew', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        crew_id: crew_id,
+                        source_ship_id: source_ship_id,
+                        destination_ship_id: destination_ship_id
+                    })
+                });
+                const result = await response.json();
 
-    const max = Math.max(...cargo.map(c => c.total_kg), 1);
-    document.getElementById('analytics-cargo').innerHTML = cargo.map(c => `
-      <div class="cargo-bar-row">
-        <div class="cargo-bar-label">${c._id}</div>
-        <div class="cargo-bar-track"><div class="cargo-bar-fill" style="width:${(c.total_kg/max*100).toFixed(1)}%"></div></div>
-        <div class="cargo-bar-val">${c.total_kg.toLocaleString('pl')} kg<br><span style="color:var(--text3);font-size:9px">${c.item_count} poz.</span></div>
-      </div>`).join('');
+                if (response.ok) {
+                    transferMessage.textContent = result.message;
+                    transferMessage.style.color = 'lightgreen';
+                    fetchShips(); // Odśwież listę statków po transakcji
+                } else {
+                    transferMessage.textContent = `Błąd transakcji: ${result.error || response.statusText}`;
+                    transferMessage.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Błąd podczas transakcji przenoszenia załoganta:', error);
+                transferMessage.textContent = 'Wystąpił błąd podczas transakcji. Sprawdź konsolę przeglądarki i logi serwera.';
+                transferMessage.style.color = 'red';
+            }
+        });
 
-    document.getElementById('analytics-fleet').innerHTML = `
-      <div class="detail-row"><div class="detail-key">Łączna liczba statków</div><div class="detail-val td-mono">${summary.total_ships}</div></div>
-      <div class="detail-row"><div class="detail-key">W locie</div><div class="detail-val td-mono" style="color:var(--accent)">${summary.in_transit}</div></div>
-      <div class="detail-row"><div class="detail-key">Zacumowane</div><div class="detail-val td-mono" style="color:var(--green)">${summary.docked}</div></div>
-      <div class="detail-row"><div class="detail-key">Awaryjne</div><div class="detail-val td-mono" style="color:var(--red)">${summary.emergency||0}</div></div>
-      <div class="detail-row"><div class="detail-key">Śr. kadłub</div><div class="detail-val">${bar(Math.round(summary.avg_hull||0),'green')}</div></div>
-      <div class="detail-row"><div class="detail-key">Śr. paliwo</div><div class="detail-val">${bar(Math.round(summary.avg_fuel||0))}</div></div>
-      <div class="detail-row"><div class="detail-key">Poz. ładunków</div><div class="detail-val td-mono">${summary.total_cargo_types}</div></div>`;
+        // Ustanowienie połączenia z Change Stream (SSE)
+        function setupChangeStream() {
+            if (typeof EventSource !== 'undefined') {
+                const source = new EventSource('/api/watch/ships');
 
-  } catch(e) { toast('Błąd analityki: ' + e.message, true); }
-}
+                source.onopen = function() {
+                    console.log('Połączono z Change Stream (SSE).');
+                    realtimeUpdatesDiv.innerHTML = '<p>Połączono z Change Stream. Oczekiwanie na aktualizacje...</p>';
+                };
 
-// ── Init ──────────────────────────────────────────────────────
-async function init() {
-  try {
-    const routes = await api('/routes');
-    document.getElementById('new-ship-route').innerHTML =
-      routes.map(r => `<option value="${r._id}">${r.name}</option>`).join('');
-  } catch(e) {}
-  loadDashboard();
-}
+                source.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log('Otrzymano aktualizację:', data);
+                    const updateItem = document.createElement('div');
+                    updateItem.className = 'update-item';
 
-init();
-</script>
+                    let message = `Typ operacji: <strong>${data.operationType}</strong>`;
+                    if (data.documentKey && data.documentKey._id) {
+                         message += ` na dokumencie ID: ${data.documentKey._id}`;
+                    }
+
+                    if (data.fullDocument) {
+                        message += `<br>Statek: <strong>${data.fullDocument.name}</strong>, Status: ${data.fullDocument.status}, Załoga: ${data.fullDocument.crew_ids ? data.fullDocument.crew_ids.length : 0}`;
+                    } else if (data.updateDescription) {
+                        message += `<br>Zmienione pola: ${Object.keys(data.updateDescription.updatedFields).join(', ')}`;
+                    } else if (data.operationType === 'delete') {
+                        message += `<br>Dokument został usunięty.`;
+                    }
+                    updateItem.innerHTML = message;
+
+                    if (realtimeUpdatesDiv.firstChild && realtimeUpdatesDiv.firstChild.tagName === 'P') {
+                        realtimeUpdatesDiv.innerHTML = ''; // Usuń początkowy tekst
+                    }
+                    realtimeUpdatesDiv.prepend(updateItem); // Dodaj najnowszą aktualizację na górę
+                };
+
+                source.onerror = function(error) {
+                    console.error('Błąd Change Stream (SSE):', error);
+                    realtimeUpdatesDiv.innerHTML += '<p style="color: red;">Błąd połączenia z Change Stream. Upewnij się, że MongoDB działa jako replikaset.</p>';
+                    source.close();
+                };
+            } else {
+                realtimeUpdatesDiv.innerHTML = '<p style="color: red;">Twoja przeglądarka nie obsługuje Server-Sent Events.</p>';
+            }
+        }
+
+        // Inicjalizacja: pobierz statki i uruchom Change Stream
+        fetchShips();
+        setupChangeStream();
+    </script>
 </body>
 </html>
