@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory, Response # Dodano Response
 from flask_cors import CORS
-from bson import ObjectId
+from bson import ObjectId, Timestamp
 from datetime import datetime, timedelta
 import os, json
 
@@ -21,6 +21,9 @@ def to_json(doc):
         return str(doc)
     if isinstance(doc, datetime):
         return doc.isoformat()
+    # DODAJ TĘ LINIĘ: Obsługa obiektów Timestamp z BSON
+    if isinstance(doc, Timestamp): # Pamiętaj o imporcie Timestamp!
+        return f"Timestamp(t={doc.time}, i={doc.inc})" # Lub po prostu str(doc)
     return doc
 
 # ═══════════════════════════════════════════════════════════════

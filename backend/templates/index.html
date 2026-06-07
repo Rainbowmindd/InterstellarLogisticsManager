@@ -355,7 +355,8 @@
             <button id="cargo-breakdown-button">Pokaż Rozkład Ładunku</button>
             <div id="cargo-breakdown-results" class="analytics-results">
                 <p>Kliknij, aby zobaczyć rozkład ładunku wg typu.</p>
-            </div>
+            </p>
+        </div>
 
             <h3>Średnie Parametry Telemetrii za Okres</h3>
             <form id="telemetry-avg-form">
@@ -410,11 +411,22 @@
     <script>
         // --- POMOCNIKI ---
         function showMessage(element, message, type = 'info') {
-            element.textContent = message;
-            element.className = `result-message ${type}`;
+            // Jeśli element jest tekstem, otocz go w <p>
+            if (element instanceof HTMLElement && element.tagName !== 'P' && element.tagName !== 'DIV') {
+                element.innerHTML = `<p class="result-message ${type}">${message}</p>`;
+            } else {
+                element.textContent = message;
+                element.className = `result-message ${type}`;
+            }
+
             setTimeout(() => {
-                element.textContent = '';
-                element.className = 'result-message';
+                if (element instanceof HTMLElement && element.tagName !== 'P' && element.tagName !== 'DIV') {
+                    // Jeśli to nie był <p> czy <div>, po prostu wyczyść
+                    element.innerHTML = '';
+                } else {
+                    element.textContent = '';
+                    element.className = 'result-message';
+                }
             }, 5000); // Wiadomość znika po 5 sekundach
         }
 
@@ -481,15 +493,45 @@
 
         // Pobierz i wypełnij listy załogi (dla selektów)
         async function fetchCrew() {
+            // KLUCZOWA ZMIANA SELEKTORA TUTAJ!
+            const crewSelects = document.querySelectorAll('select[id$="CrewSelect"], select[id$="MemberSelect"]');
+
+            crewSelects.forEach(select => {
+                // Clear existing options, keep the default one
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                const defaultOption = select.querySelector('option[value=""]');
+                if (!defaultOption) { // Ensure default option exists
+                    const opt = document.createElement('option');
+                    opt.value = "";
+                    opt.textContent = "-- Wybierz Załoganta --";
+                    select.prepend(opt);
+                    select.value = ""; // Select default
+                }
+            });
+
             try {
                 const response = await fetch('/api/crew');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+                    throw new Error(`Błąd HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
                 const crew = await response.json();
-                allCrew = crew;
+                allCrew = crew; // Store for global use
 
-                const crewSelects = document.querySelectorAll('select[id$="CrewSelect"]'); // Selecty kończące się na "CrewSelect"
-                crewSelects.forEach(select => {
-                    select.innerHTML = '<option value="">-- Wybierz Załoganta --</option>'; // Opcja domyślna
-                });
+                if (crew.length === 0) {
+                    crewSelects.forEach(select => {
+                        const noCrewOption = document.createElement('option');
+                        noCrewOption.value = "";
+                        noCrewOption.textContent = "Brak załogantów w bazie danych";
+                        noCrewOption.disabled = true;
+                        select.appendChild(noCrewOption);
+                    });
+                    // Display general message to the user that no crew found.
+                    showMessage(document.getElementById('crew-list-results'), 'Brak załogantów w bazie danych.', 'warning');
+                    return; // Exit if no crew
+                }
 
                 crew.forEach(member => {
                     crewSelects.forEach(select => {
@@ -501,6 +543,13 @@
                 });
             } catch (error) {
                 console.error('Błąd podczas pobierania załogi:', error);
+                // Display error message in relevant sections
+                const errorMsg = error.message || 'Wystąpił błąd podczas ładowania listy załogi.';
+                showMessage(document.getElementById('assign-crew-message'), errorMsg, 'error');
+                showMessage(document.getElementById('crew-list-results'), errorMsg, 'error');
+                showMessage(document.getElementById('crew-member-details'), errorMsg, 'error');
+                showMessage(document.getElementById('create-crew-message'), errorMsg, 'error');
+                showMessage(document.getElementById('update-medical-message'), errorMsg, 'error');
             }
         }
 
@@ -534,7 +583,7 @@
             const shipId = document.getElementById('getShipSelect').value;
             const shipDetailsDiv = document.getElementById('ship-details');
             if (!shipId) {
-                showMessage(shipDetailsDiv, '<p class="result-message warning">Wybierz statek.</p>', 'warning');
+                showMessage(shipDetailsDiv, 'Wybierz statek.', 'warning');
                 return;
             }
             try {
@@ -1397,7 +1446,7 @@
         // --- INICJALIZACJA APLIKACJI ---
         document.addEventListener('DOMContentLoaded', () => {
             fetchShips();
-            fetchCrew();
+            fetchCrew(); // Ta funkcja teraz działa prawidłowo
             fetchRoutes();
             setupChangeStream();
         });
